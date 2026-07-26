@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Assessment — {{ target }}</title>
+    <style>
+        :root {
+            --bg:            #0f172a;
+            --card:          #1e293b;
+            --card-hover:    #263348;
+            --border:        #334155;
+            --text:          #f1f5f9;
+            --muted:         #94a3b8;
+            --accent:        #38bdf8;
+            --green:         #22c55e;
+            --critical:      #ef4444;
+            --high:          #f97316;
+            --medium:        #eab308;
+            --low:           #3b82f6;
+            --info:          #64748b;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1300px; margin: 0 auto; }
+
+        /* ── Header ── */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .header-left h1 {
+            font-size: 1.9rem;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .header-left .target-badge {
+            display: inline-block;
+            background: #0f2d45;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 4px;
+            padding: 0.2rem 0.7rem;
+            font-size: 0.9rem;
+            margin-top: 0.4rem;
+        }
+        .header-right { color: var(--muted); font-size: 0.85rem; text-align: right; }
+
+        /* ── Metrics Grid ── */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+        .metric-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem 1rem;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .metric-card:hover { background: var(--card-hover); }
+        .metric-card .val {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1.1;
+        }
+        .metric-card .lbl {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 0.35rem;
+        }
+        .metric-card.danger .val { color: var(--critical); }
+        .metric-card.warn  .val  { color: var(--high); }
+
+        /* ── Alert Banner ── */
+        .alert-banner {
+            background: rgba(239,68,68,0.12);
+            border: 1px solid var(--critical);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            color: var(--critical);
+            font-weight: 600;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .alert-banner.hidden { display: none; }
+
+        /* ── Section Cards ── */
+        section.card-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        section.card-section h2 {
+            font-size: 1.15rem;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        section.card-section h3 {
+            font-size: 1rem;
+            color: var(--accent);
+            margin: 1.25rem 0 0.5rem;
+        }
+
+        /* ── Tables ── */
+        .tbl-wrap { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        th {
+            background: #0f172a;
+            color: var(--muted);
+            font-weight: 600;
+            padding: 0.65rem 0.85rem;
+            text-align: left;
+            white-space: nowrap;
+        }
+        td {
+            padding: 0.65rem 0.85rem;
+            border-bottom: 1px solid var(--border);
+            word-break: break-word;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+
+        code {
+            font-family: "Fira Code", "Courier New", monospace;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            color: var(--accent);
+        }
+
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* ── Severity Badges ── */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .sev-critical { background: var(--critical);  color: #fff; }
+        .sev-high     { background: var(--high);       color: #fff; }
+        .sev-medium   { background: var(--medium);     color: #000; }
+        .sev-low      { background: var(--low);        color: #fff; }
+        .sev-info     { background: var(--info);       color: #fff; }
+        .sev-warn     { background: var(--high);       color: #fff; }
+
+        /* Tag chips */
+        .chip {
+            display: inline-block;
+            background: #0f2d45;
+            border: 1px solid #1e4a6e;
+            color: var(--accent);
+            border-radius: 999px;
+            padding: 0.15rem 0.6rem;
+            font-size: 0.78rem;
+            margin: 0.15rem;
+        }
+
+        .empty-state { color: var(--muted); font-size: 0.9rem; padding: 0.5rem 0; }
+
+        /* ── Status Chips ── */
+        .st-ok   { color: var(--green);    font-weight: 600; }
+        .st-fail { color: var(--critical); font-weight: 600; }
+        .st-skip { color: var(--muted);    font-weight: 600; }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ── Header ─────────────────────────────────────────────────── -->
+    <header>
+        <div class="header-left">
+            <h1>⚡ Vulnerability Assessment Report</h1>
+            <span class="target-badge">{{ target }}</span>
+        </div>
+        <div class="header-right">
+            <div>Generated: <strong>{{ timestamp }}</strong></div>
+            <div>Framework: Modular CLI Security Scanner v1.0.0</div>
+        </div>
+    </header>
+
+    <!-- ── Metrics ────────────────────────────────────────────────── -->
+    {% set vuln_count = (scan.get('nuclei', {}) or {}).get('vulnerabilities', []) | length %}
+    {% set crit_count = (scan.get('nuclei', {}) or {}).get('vulnerabilities', []) | selectattr("severity", "in", ["critical","high"]) | list | length %}
+    {% set ssl_count  = (scan.get('testssl', {}) or {}).get('findings', []) | length %}
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="val">{{ (recon.get('subfinder', {}) or {}).get('subdomains', []) | length }}</div>
+            <div class="lbl">Subdomains</div>
+        </div>
+        <div class="metric-card">
+            <div class="val">{{ (recon.get('httpx', {}) or {}).get('services', []) | length }}</div>
+            <div class="lbl">HTTP Services</div>
+        </div>
+        <div class="metric-card">
+            <div class="val">
+                {% set ports = namespace(n=0) %}
+                {% for h in (recon.get('nmap', {}) or {}).get('hosts', []) %}{% set ports.n = ports.n + (h.open_ports | length) %}{% endfor %}
+                {{ ports.n }}
+            </div>
+            <div class="lbl">Open Ports</div>
+        </div>
+        <div class="metric-card">
+            <div class="val">{{ (recon.get('katana', {}) or {}).get('endpoints', []) | length }}</div>
+            <div class="lbl">Crawled Paths</div>
+        </div>
+        <div class="metric-card {% if ssl_count %}warn{% endif %}">
+            <div class="val">{{ ssl_count }}</div>
+            <div class="lbl">TLS/SSL Alerts</div>
+        </div>
+        <div class="metric-card {% if vuln_count %}danger{% endif %}">
+            <div class="val">{{ vuln_count }}</div>
+            <div class="lbl">Vulnerabilities</div>
+        </div>
+    </div>
+
+    <!-- ── Critical Alert Banner ──────────────────────────────────── -->
+    <div class="alert-banner {% if crit_count == 0 %}hidden{% endif %}">
+        ⚠ {{ crit_count }} CRITICAL / HIGH severity vulnerability(ies) require immediate attention!
+    </div>
+
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <!-- 1. Vulnerabilities                                             -->
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <section class="card-section">
+        <h2>🔴 1. Vulnerability Assessment Findings (Nuclei)</h2>
+        {% set vulns = (scan.get('nuclei', {}) or {}).get('vulnerabilities', []) %}
+        {% if vulns %}
+        <div class="tbl-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Vulnerability Name</th>
+                    <th>Type</th>
+                    <th>Matched Location</th>
+                    <th>Template ID</th>
+                    <th>CVE</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for v in vulns %}
+            <tr>
+                <td><span class="badge sev-{{ v.severity | lower }}">{{ v.severity }}</span></td>
+                <td><strong>{{ v.name }}</strong></td>
+                <td>{{ v.type }}</td>
+                <td><code>{{ v.matched_at }}</code></td>
+                <td><code>{{ v.template_id }}</code></td>
+                <td>
+                    {% for cve in v.cve_id | default([]) %}
+                        <span class="badge sev-critical">{{ cve }}</span>
+                    {% else %}
+                        <span style="color:var(--muted)">—</span>
+                    {% endfor %}
+                </td>
+                <td>{{ v.description if v.description else "—" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="empty-state">✅ No vulnerabilities identified by Nuclei scanner.</p>
+        {% endif %}
+    </section>
+
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <!-- 2. TLS/SSL Assessment                                          -->
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <section class="card-section">
+        <h2>🔒 2. TLS/SSL Security Assessment (testssl.sh)</h2>
+        {% set findings = (scan.get('testssl', {}) or {}).get('findings', []) %}
+        {% if findings %}
+        <div class="tbl-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Finding ID</th>
+                    <th>CVE</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for f in findings %}
+            <tr>
+                <td><span class="badge sev-{{ f.severity | lower }}">{{ f.severity }}</span></td>
+                <td><code>{{ f.id }}</code></td>
+                <td>
+                    {% if f.cve %}
+                        <span class="badge sev-critical">{{ f.cve }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ f.finding }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="empty-state">✅ No critical TLS/SSL vulnerabilities flagged.</p>
+        {% endif %}
+    </section>
+
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <!-- 3. Port & Service Discovery                                    -->
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <section class="card-section">
+        <h2>🌐 3. Port & Service Discovery (Nmap)</h2>
+        {% set hosts = (recon.get('nmap', {}) or {}).get('hosts', []) %}
+        {% if hosts %}
+            {% for host in hosts %}
+            <h3>Host: {{ host.ip }} &nbsp;|&nbsp; State: {{ host.state }}</h3>
+            {% set ports = host.open_ports | default([]) %}
+            {% if ports %}
+            <div class="tbl-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Port</th>
+                        <th>Protocol</th>
+                        <th>State</th>
+                        <th>Service</th>
+                        <th>Product</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in ports %}
+                <tr>
+                    <td><strong>{{ p.port }}</strong></td>
+                    <td>{{ p.protocol }}</td>
+                    <td>{{ p.state }}</td>
+                    <td>{{ p.service }}</td>
+                    <td>{{ p.product if p.product else "—" }}</td>
+                    <td>{{ p.version if p.version else "—" }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <p class="empty-state">No open ports detected on this host.</p>
+            {% endif %}
+            {% endfor %}
+        {% else %}
+        <p class="empty-state">No hosts scanned or Nmap was skipped.</p>
+        {% endif %}
+    </section>
+
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <!-- 4. HTTP Services                                               -->
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <section class="card-section">
+        <h2>📡 4. Discovered HTTP Services (HTTPX)</h2>
+        {% set services = (recon.get('httpx', {}) or {}).get('services', []) %}
+        {% if services %}
+        <div class="tbl-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>URL</th>
+                    <th>Status Code</th>
+                    <th>Title</th>
+                    <th>Web Server</th>
+                    <th>IP</th>
+                    <th>Content Length</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for s in services %}
+            <tr>
+                <td><a href="{{ s.url }}" target="_blank">{{ s.url }}</a></td>
+                <td>
+                    {% set code = s.status_code %}
+                    <span class="badge {% if code >= 200 and code < 300 %}sev-low{% elif code >= 300 and code < 400 %}sev-medium{% else %}sev-critical{% endif %}">
+                        {{ code }}
+                    </span>
+                </td>
+                <td>{{ s.title if s.title else "—" }}</td>
+                <td>{{ s.webserver if s.webserver else "—" }}</td>
+                <td><code>{{ s.ip if s.ip else "—" }}</code></td>
+                <td>{{ s.content_length if s.content_length else "—" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="empty-state">No active HTTP services discovered.</p>
+        {% endif %}
+    </section>
+
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <!-- 5. Technology Stack                                            -->
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <section class="card-section">
+        <h2>🧩 5. Technology Stack Fingerprinting (WhatWeb)</h2>
+        {% set tech_list = (recon.get('whatweb', {}) or {}).get('tech_stack', []) %}
+        {% if tech_list %}
+            {% for item in tech_list %}
+            <h3>{{ item.target }} — HTTP {{ item.status }}</h3>
+            <div style="margin-bottom:0.75rem;">
+                {% for t in item.technologies | default([]) %}
+                    <span class="chip">{{ t }}</span>
+                {% else %}
+                    <span class="empty-state">No technologies detected.</span>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        {% else %}
+        <p class="empty-state">No technology stack identified or WhatWeb was skipped.</p>
+        {% endif %}
+    </section>
+
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <!-- 6. Subdomains                                                  -->
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <section class="card-section">
+        <h2>🌍 6. Discovered Subdomains (Subfinder)</h2>
+        {% set subs = (recon.get('subfinder', {}) or {}).get('subdomains', []) %}
+        {% if subs %}
+        <div class="tbl-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Subdomain</th></tr></thead>
+            <tbody>
+            {% for sub in subs %}
+            <tr>
+                <td style="color:var(--muted);width:3rem;">{{ loop.index }}</td>
+                <td><code>{{ sub }}</code></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="empty-state">No subdomains discovered or Subfinder was skipped.</p>
+        {% endif %}
+    </section>
+
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <!-- 7. Crawled Endpoints                                           -->
+    <!-- ────────────────────────────────────────────────────────────── -->
+    <section class="card-section">
+        <h2>🕷️ 7. Web Crawl — Discovered Endpoints (Katana)</h2>
+        {% set eps = (recon.get('katana', {}) or {}).get('endpoints', []) %}
+        {% if eps %}
+        <div class="tbl-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Endpoint URL</th></tr></thead>
+            <tbody>
+            {% for ep in eps %}
+            <tr>
+                <td style="color:var(--muted);width:3rem;">{{ loop.index }}</td>
+                <td><a href="{{ ep }}" target="_blank">{{ ep }}</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="empty-state">No endpoints crawled or Katana was skipped.</p>
+        {% endif %}
+    </section>
+
+    <footer>
+        <p>Automated Vulnerability Assessment Framework &bull; Strictly for Authorized Security Assessments Only</p>
+    </footer>
+
+</div>
+</body>
+</html>

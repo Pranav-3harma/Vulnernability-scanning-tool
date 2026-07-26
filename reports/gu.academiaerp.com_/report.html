@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Assessment - https://gu.academiaerp.com/</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent-blue: #38bdf8;
+            --sev-critical: #ef4444;
+            --sev-high: #f97316;
+            --sev-medium: #eab308;
+            --sev-low: #3b82f6;
+            --sev-info: #64748b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: var(--accent-blue);
+            margin: 0 0 0.5rem 0;
+            font-size: 2.2rem;
+        }
+
+        .meta-info {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .card .number {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-top: 0.5rem;
+        }
+
+        .card .label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #0f172a;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .badge-critical { background-color: var(--sev-critical); color: #fff; }
+        .badge-high { background-color: var(--sev-high); color: #fff; }
+        .badge-medium { background-color: var(--sev-medium); color: #000; }
+        .badge-low { background-color: var(--sev-low); color: #fff; }
+        .badge-info { background-color: var(--sev-info); color: #fff; }
+
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vulnerability Assessment Report</h1>
+            <div class="meta-info">
+                <span><strong>Target:</strong> https://gu.academiaerp.com/</span> | 
+                <span><strong>Generated:</strong> 2026-07-24 23:18:46</span> | 
+                <span><strong>Framework:</strong> Modular CLI Security Scanner v1.0.0</span>
+            </div>
+        </header>
+
+        <!-- Executive Metrics -->
+        <div class="grid">
+            <div class="card">
+                <div class="label">Subdomains</div>
+                <div class="number">0</div>
+            </div>
+            <div class="card">
+                <div class="label">Web Services</div>
+                <div class="number">0</div>
+            </div>
+            <div class="card">
+                <div class="label">Crawled Paths</div>
+                <div class="number">113</div>
+            </div>
+            <div class="card">
+                <div class="label">Vulnerabilities</div>
+                <div class="number">12</div>
+            </div>
+        </div>
+
+        <!-- Section 1: Discovered Ports -->
+        <section>
+            <h2>1. Port & Service Discovery (Nmap)</h2>
+            
+            
+                <p>No open ports discovered or scan was skipped.</p>
+            
+        </section>
+
+        <!-- Section 2: Vulnerability Findings -->
+        <section>
+            <h2>2. Vulnerability Assessment Findings (Nuclei)</h2>
+            
+            
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Severity</th>
+                            <th>Vulnerability Name</th>
+                            <th>Matched Location</th>
+                            <th>Template ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>WAF Detection</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>waf-detect</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>TLS Version - Detect</strong></td>
+                            <td><code>gu.academiaerp.com:443</code></td>
+                            <td><code>tls-version</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>Wappalyzer Technology Detection</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>tech-detect</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>HTTP Missing Security Headers</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>http-missing-security-headers</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>HTTP Missing Security Headers</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>http-missing-security-headers</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>HTTP Missing Security Headers</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>http-missing-security-headers</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>HTTP Missing Security Headers</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>http-missing-security-headers</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>HTTP Missing Security Headers</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>http-missing-security-headers</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>HTTP Missing Security Headers</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>http-missing-security-headers</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>Weak HTTP Strict-Transport-Security - Detect</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>weak-hsts-detect</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>Add DOM EventListener - Detection</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>addeventlistener-detect</code></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                
+                                <span class="badge badge-info">info</span>
+                            </td>
+                            <td><strong>Missing Subresource Integrity</strong></td>
+                            <td><code>https://gu.academiaerp.com/</code></td>
+                            <td><code>missing-sri</code></td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            
+        </section>
+
+        <!-- Section 3: Web Services -->
+        <section>
+            <h2>3. Discovered Web Services (HTTPX)</h2>
+            
+            
+                <p>No active HTTP services discovered.</p>
+            
+        </section>
+
+        <footer>
+            <p>Automated Vulnerability Assessment Framework &bull; Strictly for Authorized Assessments</p>
+        </footer>
+    </div>
+</body>
+</html>

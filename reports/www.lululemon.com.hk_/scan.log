@@ -1,0 +1,19 @@
+2026-07-26 02:54:14,199 [INFO] [main.py:35]: Initializing Modular Vulnerability Assessment Session...
+2026-07-26 02:54:14,200 [INFO] [main.py:36]: Target Acquired: https://www.lululemon.com.hk/
+2026-07-26 02:54:14,200 [INFO] [main.py:37]: Output Directory Configured: /home/kali/Desktop/secure-site-scan-main/reports/www.lululemon.com.hk_
+2026-07-26 02:54:14,200 [INFO] [runner.py:54]: === Starting Assessment Pipeline on Target: https://www.lululemon.com.hk/ ===
+2026-07-26 02:54:14,200 [INFO] [runner.py:57]: --> [Phase 1/2] Launching Reconnaissance & Service Enumeration Tools...
+2026-07-26 02:54:14,201 [INFO] [recon.py:61]: Running [Subfinder Subdomain Discovery] on: www.lululemon.com.hk
+2026-07-26 02:54:47,977 [INFO] [recon.py:190]: Running [HTTP Service Prober] on target: https://www.lululemon.com.hk/
+2026-07-26 02:54:48,480 [INFO] [recon.py:248]: Running [Nmap Port & Service Scanner] on: www.lululemon.com.hk
+2026-07-26 03:00:00,798 [ERROR] [executor.py:82]: Command timed out after 300 seconds: nmap -sV -sC --top-ports 1000 -T4 --open -oX reports/www.lululemon.com.hk_/nmap_output.xml www.lululemon.com.hk
+2026-07-26 03:00:00,799 [ERROR] [recon.py:367]: Failed to parse Nmap XML: no element found: line 15, column 0
+2026-07-26 03:00:00,800 [INFO] [recon.py:393]: Running [WhatWeb Tech Stack Fingerprinter] on: https://www.lululemon.com.hk/
+2026-07-26 03:00:09,587 [INFO] [recon.py:486]: Running [Katana Web Crawler] on: https://www.lululemon.com.hk/
+2026-07-26 03:00:20,990 [INFO] [runner.py:86]: --> [Phase 2/2] Launching Vulnerability Scanners...
+2026-07-26 03:00:20,990 [INFO] [scanners.py:114]: Running [TestSSL Comprehensive TLS/SSL Auditor] on: www.lululemon.com.hk:443
+2026-07-26 03:03:54,068 [INFO] [scanners.py:253]: Running [Nuclei Vulnerability Scanner] on: https://www.lululemon.com.hk/
+2026-07-26 03:09:07,408 [ERROR] [executor.py:82]: Command timed out after 300 seconds: nuclei -u https://www.lululemon.com.hk/ -j -o reports/www.lululemon.com.hk_/nuclei_output.json -silent -no-color
+2026-07-26 03:09:07,411 [INFO] [runner.py:100]: --> [Phase 3/3] Generating Consolidated Reports...
+2026-07-26 03:09:07,412 [INFO] [reporter.py:50]: Master JSON report generated at: /home/kali/Desktop/secure-site-scan-main/reports/www.lululemon.com.hk_/report.json
+2026-07-26 03:09:07,412 [INFO] [reporter.py:128]: Executive Markdown summary generated at: /home/kali/Desktop/secure-site-scan-main/reports/www.lululemon.com.hk_/summary.md

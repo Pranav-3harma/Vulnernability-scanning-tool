@@ -1,0 +1,20 @@
+[
+  {
+    "url": "https://www.gnauniversity.edu.in/",
+    "probed_url": "https://www.gnauniversity.edu.in/",
+    "status_code": 200,
+    "title": "Best Private University in Punjab - Top Engineering Universities, Best Business School, Top University for B.Tech, Engineering, MBA &amp; Other Professional Courses in North India - GNA University",
+    "server": "Apache",
+    "x_powered_by": "PHP/7.4.33",
+    "content_type": "text/html; charset=UTF-8",
+    "content_length": 399311,
+    "hsts": "",
+    "x_frame_options": "",
+    "x_content_type_options": "",
+    "redirect_location": "",
+    "technologies": [
+      "PHP/7.4.33",
+      "Apache"
+    ]
+  }
+]

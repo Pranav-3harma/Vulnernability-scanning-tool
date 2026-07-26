@@ -1,0 +1,97 @@
+{
+    "metadata": {
+        "target": "https://www.gnauniversity.edu.in/",
+        "timestamp": "2026-07-25T04:39:29.195315",
+        "scanner_version": "1.0.0"
+    },
+    "reconnaissance": {
+        "subfinder": {
+            "status": "success",
+            "duration": 33.15,
+            "subdomains": [],
+            "count": 0,
+            "target_hostname": "www.gnauniversity.edu.in",
+            "output_file": "reports/www.gnauniversity.edu.in_/subfinder_output.txt"
+        },
+        "httpx": {
+            "status": "success",
+            "duration": 0,
+            "services": [
+                {
+                    "url": "https://www.gnauniversity.edu.in/",
+                    "probed_url": "https://www.gnauniversity.edu.in/",
+                    "status_code": 200,
+                    "title": "Best Private University in Punjab - Top Engineering Universities, Best Business School, Top University for B.Tech, Engineering, MBA &amp; Other Professional Courses in North India - GNA University",
+                    "server": "Apache",
+                    "x_powered_by": "PHP/7.4.33",
+                    "content_type": "text/html; charset=UTF-8",
+                    "content_length": 399311,
+                    "hsts": "",
+                    "x_frame_options": "",
+                    "x_content_type_options": "",
+                    "redirect_location": "",
+                    "technologies": [
+                        "PHP/7.4.33",
+                        "Apache"
+                    ]
+                }
+            ],
+            "count": 1,
+            "output_file": "reports/www.gnauniversity.edu.in_/httpx_output.json"
+        },
+        "nmap": {
+            "status": "failed",
+            "duration": 305.39,
+            "hosts": [],
+            "summary": "",
+            "output_file": "reports/www.gnauniversity.edu.in_/nmap_output.xml"
+        },
+        "whatweb": {
+            "status": "success",
+            "duration": 77.1,
+            "tech_stack": [],
+            "output_file": "reports/www.gnauniversity.edu.in_/whatweb_output.json"
+        },
+        "katana": {
+            "status": "success",
+            "duration": 15.09,
+            "endpoints": [
+                "https://www.gnauniversity.edu.in/"
+            ],
+            "count": 1,
+            "output_file": "reports/www.gnauniversity.edu.in_/katana_output.txt"
+        }
+    },
+    "vulnerabilities": {
+        "testssl": {
+            "status": "success",
+            "duration": 55.1,
+            "findings": [
+                {
+                    "id": "scanProblem",
+                    "severity": "FATAL",
+                    "category": "General",
+                    "finding": "No IPv4/IPv6 address(es) for 'www.gnauniversity.edu.in' available",
+                    "cve": [],
+                    "cwe": ""
+                }
+            ],
+            "summary": {
+                "grade": "",
+                "protocols": {},
+                "vulnerabilities": [],
+                "warnings": []
+            },
+            "count": 1,
+            "raw_stdout": "\u001b[1m\n#####################################################################\u001b[m\n  \u001b[1mtestssl\u001b[m version \u001b[1m3.2.2\u001b[m from \u001b[1mhttps://testssl.sh/\u001b[m\n\u001b[1m\n  This program is free software. Distribution and modification under\n  GPLv2 permitted. USAGE w/o ANY WARRANTY. USE IT AT YOUR OWN RISK!\u001b[m\n\n  Please file bugs @ \u001b[1mhttps://testssl.sh/bugs/\u001b[m\n\u001b[1m#####################################################################\u001b[m\n\n  Using \u001b[3mOpenSSL 3.6.2 (Apr 11 2026)\u001b[m  [~103 ciphers]\n  on kali:/usr/bin/openssl\n\n\n\n",
+            "output_file": "reports/www.gnauniversity.edu.in_/testssl_output.json"
+        },
+        "nuclei": {
+            "status": "success",
+            "duration": 78.21,
+            "vulnerabilities": [],
+            "count": 0,
+            "output_file": "reports/www.gnauniversity.edu.in_/nuclei_output.json"
+        }
+    }
+}

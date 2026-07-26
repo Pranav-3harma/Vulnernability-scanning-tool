@@ -1,0 +1,19 @@
+[
+  {
+    "url": "https://www.lululemon.com.hk/",
+    "probed_url": "https://www.lululemon.com.hk/",
+    "status_code": 403,
+    "title": "Attention Required! | Cloudflare",
+    "server": "cloudflare",
+    "x_powered_by": "",
+    "content_type": "text/html; charset=UTF-8",
+    "content_length": 5514,
+    "hsts": "",
+    "x_frame_options": "SAMEORIGIN",
+    "x_content_type_options": "",
+    "redirect_location": "",
+    "technologies": [
+      "cloudflare"
+    ]
+  }
+]

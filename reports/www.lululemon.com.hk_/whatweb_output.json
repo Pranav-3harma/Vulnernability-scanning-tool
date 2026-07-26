@@ -1,0 +1,3 @@
+[
+{"target":"https://www.lululemon.com.hk/","http_status":403,"request_config":{"headers":{"User-Agent":"WhatWeb/0.6.4"}},"plugins":{"Cookies":{"string":["__cf_bm"]},"Country":{"string":["UNITED STATES"],"module":["US"]},"HTML5":{},"HTTPServer":{"string":["cloudflare"]},"HttpOnly":{"string":["__cf_bm"]},"IP":{"string":["104.18.34.80"]},"Script":{},"Title":{"string":["Just a moment..."]},"UncommonHeaders":{"string":["accept-ch,cf-mitigated,content-security-policy,critical-ch,cross-origin-embedder-policy,cross-origin-opener-policy,cross-origin-resource-policy,origin-agent-cluster,permissions-policy,referrer-policy,server-timing,x-content-type-options,cf-ray,alt-svc"]},"X-Frame-Options":{"string":["SAMEORIGIN"]},"X-UA-Compatible":{"string":["IE=Edge"]}}}
+]
