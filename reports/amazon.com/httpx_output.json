@@ -1,0 +1,36 @@
+[
+  {
+    "url": "https://www.amazon.com/",
+    "probed_url": "https://amazon.com",
+    "status_code": 503,
+    "title": "Sorry! Something went wrong!",
+    "server": "Server",
+    "x_powered_by": "",
+    "content_type": "text/html",
+    "content_length": 2671,
+    "hsts": "max-age=47474747; includeSubDomains; preload",
+    "x_frame_options": "",
+    "x_content_type_options": "",
+    "redirect_location": "https://www.amazon.com/",
+    "technologies": [
+      "Server"
+    ]
+  },
+  {
+    "url": "https://www.amazon.com/",
+    "probed_url": "http://amazon.com",
+    "status_code": 200,
+    "title": "&nbsp;",
+    "server": "AkamaiGHost",
+    "x_powered_by": "",
+    "content_type": "text/html",
+    "content_length": 2162,
+    "hsts": "",
+    "x_frame_options": "",
+    "x_content_type_options": "",
+    "redirect_location": "https://www.amazon.com/",
+    "technologies": [
+      "AkamaiGHost"
+    ]
+  }
+]

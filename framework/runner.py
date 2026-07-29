@@ -2,25 +2,9 @@ import logging
 from typing import Any
 
 from framework.config import Config
-from framework.printer import (
-    print_final_summary,
-    print_httpx_results,
-    print_katana_results,
-    print_nmap_results,
-    print_nuclei_results,
-    print_subfinder_results,
-    print_testssl_results,
-    print_whatweb_results,
-)
+from framework.printer import print_final_summary
 from framework.reporter import ReportEngine
-from modules.recon import (
-    HttpxScanner,
-    KatanaScanner,
-    NmapScanner,
-    SubfinderScanner,
-    WhatWebScanner,
-)
-from modules.scanners import NucleiScanner, TestSslScanner
+from framework.tool_registry import build_tool_instance, get_full_scan_plan, get_tool_printer
 
 
 class ScanOrchestrator:
@@ -46,73 +30,81 @@ class ScanOrchestrator:
 
     def execute_scan_pipeline(self) -> dict[str, Any]:
         """
-        Executes complete multi-phase assessment lifecycle:
-        1. Reconnaissance Phase (Subfinder, HTTPX, Nmap, WhatWeb, Katana)
-        2. Vulnerability Scanning Phase (TestSSL, Nuclei)
-        3. Report Generation Phase (JSON, Markdown, HTML)
+        Executes complete multi-phase assessment lifecycle or a single selected tool.
         """
         self.logger.info(f"=== Starting Assessment Pipeline on Target: {self.config.target} ===")
-
-        # ─── Phase 1: Reconnaissance & Enumeration ─────────────────────────────
-        self.logger.info("--> [Phase 1/2] Launching Reconnaissance & Service Enumeration Tools...")
         recon_results: dict[str, Any] = {}
-
-        # Subfinder
-        subfinder = SubfinderScanner(self.config, self.logger)
-        self._run_tool("subfinder", subfinder, recon_results)
-        print_subfinder_results(recon_results["subfinder"])
-
-        # HTTPX
-        httpx = HttpxScanner(self.config, self.logger)
-        self._run_tool("httpx", httpx, recon_results)
-        print_httpx_results(recon_results["httpx"])
-
-        # Nmap
-        nmap = NmapScanner(self.config, self.logger)
-        self._run_tool("nmap", nmap, recon_results)
-        print_nmap_results(recon_results["nmap"])
-
-        # WhatWeb
-        whatweb = WhatWebScanner(self.config, self.logger)
-        self._run_tool("whatweb", whatweb, recon_results)
-        print_whatweb_results(recon_results["whatweb"])
-
-        # Katana
-        katana = KatanaScanner(self.config, self.logger)
-        self._run_tool("katana", katana, recon_results)
-        print_katana_results(recon_results["katana"])
-
-        # ─── Phase 2: Vulnerability Assessment ─────────────────────────────────
-        self.logger.info("--> [Phase 2/2] Launching Vulnerability Scanners...")
         scan_results: dict[str, Any] = {}
 
-        # TestSSL
-        testssl = TestSslScanner(self.config, self.logger)
-        self._run_tool("testssl", testssl, scan_results)
-        print_testssl_results(scan_results["testssl"])
+        plan = list(get_full_scan_plan())
+        if getattr(self.config, "enable_naabu", True):
+            from framework.tool_registry import get_available_tools
+            registry = {t.key: t for t in get_available_tools()}
+            if "naabu" in registry and "naabu" not in [t.key for t in plan]:
+                try:
+                    idx = [t.key for t in plan].index("httpx")
+                except ValueError:
+                    idx = 1
+                plan.insert(idx + 1, registry["naabu"])
 
-        # Nuclei
-        nuclei = NucleiScanner(self.config, self.logger)
-        self._run_tool("nuclei", nuclei, scan_results)
-        print_nuclei_results(scan_results["nuclei"])
+        for tool_spec in plan:
+            self.logger.info(f"--> Running module: {tool_spec.name}")
+            tool = build_tool_instance(tool_spec.key, self.config, self.logger, recon_results.get("katana"))
+            if tool_spec.key in {"secretfinder", "linkfinder"}:
+                self._run_tool(tool_spec.key, tool, recon_results)
+            else:
+                self._run_tool(tool_spec.key, tool, recon_results if tool_spec.key in {"subfinder", "httpx", "nmap", "whatweb", "katana"} else scan_results)
 
-        # ─── Phase 3: Report Generation ────────────────────────────────────────
-        self.logger.info("--> [Phase 3/3] Generating Consolidated Reports...")
-        json_path  = self.reporter.generate_json_report(recon_results, scan_results)
-        md_path    = self.reporter.generate_markdown_summary(recon_results, scan_results)
-        html_path  = self.reporter.generate_html_report(recon_results, scan_results)
+            printer = get_tool_printer(tool_spec.key)
+            if printer is not None:
+                if tool_spec.key in {"subfinder", "httpx", "naabu", "nmap", "whatweb", "katana", "linkfinder", "secretfinder"}:
+                    printer(recon_results.get(tool_spec.key, {}))
+                else:
+                    printer(scan_results.get(tool_spec.key, {}))
 
+        self.logger.info("--> Generating Consolidated Reports...")
         report_paths = {
-            "json":     str(json_path.resolve()),
-            "markdown": str(md_path.resolve()),
-            "html":     str(html_path.resolve()),
+            "json": str((self.config.get_target_output_dir() / "report.json").resolve()),
+            "markdown": str((self.config.get_target_output_dir() / "summary.md").resolve()),
+            "html": str((self.config.get_target_output_dir() / "report.html").resolve()),
         }
 
-        self.logger.info("=== Assessment Pipeline Execution Finished Successfully ===")
+        try:
+            json_path = self.reporter.generate_json_report(recon_results, scan_results)
+            report_paths["json"] = str(json_path.resolve())
+        except Exception as err:
+            self.logger.error(f"Failed to generate JSON report: {err}")
+
+        try:
+            md_path = self.reporter.generate_markdown_summary(recon_results, scan_results)
+            report_paths["markdown"] = str(md_path.resolve())
+        except Exception as err:
+            self.logger.error(f"Failed to generate Markdown summary: {err}")
+
+        try:
+            html_path = self.reporter.generate_html_report(recon_results, scan_results)
+            report_paths["html"] = str(html_path.resolve())
+        except Exception as err:
+            self.logger.error(f"Failed to generate HTML report: {err}")
+
+        self.logger.info("=== Assessment Pipeline Execution Finished ===")
         print_final_summary(self.config.target, recon_results, scan_results, report_paths)
 
         return {
             "reconnaissance": recon_results,
             "vulnerabilities": scan_results,
-            "reports": report_paths
+            "reports": report_paths,
         }
+
+    def run_single_tool(self, tool_key: str) -> dict[str, Any]:
+        """Runs one tool module and prints its output using the shared printer."""
+        self.logger.info(f"--> Running selected module: {tool_key}")
+        results: dict[str, Any] = {}
+        tool = build_tool_instance(tool_key, self.config, self.logger, {})
+        self._run_tool(tool_key, tool, results)
+
+        printer = get_tool_printer(tool_key)
+        if printer is not None:
+            printer(results.get(tool_key, {}))
+
+        return results

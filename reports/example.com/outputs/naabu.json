@@ -1,0 +1,3 @@
+{"host":"example.com","ip":"104.20.23.154","timestamp":"2026-07-29T14:23:17.436483788Z","port":8080,"protocol":"tcp","tls":false}
+{"host":"example.com","ip":"104.20.23.154","timestamp":"2026-07-29T14:23:17.436483788Z","port":8443,"protocol":"tcp","tls":false}
+{"host":"example.com","ip":"104.20.23.154","timestamp":"2026-07-29T14:23:17.436483788Z","port":80,"protocol":"tcp","tls":false}

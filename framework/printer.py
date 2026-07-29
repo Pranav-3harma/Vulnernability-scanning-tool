@@ -169,9 +169,16 @@ def print_nmap_results(data: dict[str, Any]) -> None:
         ip = host.get("ip", "?")
         hostname = host.get("hostname", "")
         state = host.get("state", "?")
-        os_name = host.get("os", "")
-        os_acc = host.get("os_accuracy", "")
+        os_info = host.get("os", {}) or {}
+        os_name = os_info.get("name", "")
+        os_acc = os_info.get("accuracy", "")
         ports = host.get("open_ports", [])
+        hostnames = host.get("hostnames", [])
+        reverse_dns = host.get("reverse_dns", [])
+        latency_ms = host.get("latency_ms")
+        uptime_seconds = host.get("uptime_seconds")
+        traceroute = host.get("traceroute", [])
+        host_scripts = host.get("host_scripts", {})
 
         state_color = GREEN if state == "up" else RED
         print(f"\n  {BOLD}Host:{RESET} {CYAN}{ip}{RESET}", end="")
@@ -179,34 +186,100 @@ def print_nmap_results(data: dict[str, Any]) -> None:
             print(f"  ({CYAN}{hostname}{RESET})", end="")
         print(f"  State: {BOLD}{state_color}{state.upper()}{RESET}  "
               f"Open Ports: {BOLD}{GREEN}{len(ports)}{RESET}")
+
+        if hostnames:
+            _info(f"Resolved Hostnames: {', '.join(hostnames)}")
+        if reverse_dns:
+            _info(f"Reverse DNS: {', '.join(reverse_dns)}")
+        if latency_ms is not None:
+            _info(f"Latency: {latency_ms} ms")
+        if uptime_seconds is not None:
+            _info(f"Uptime: {uptime_seconds}s")
         if os_name:
-            _info(f"OS Detection: {MAGENTA}{os_name}{RESET} (Accuracy: {os_acc}%)")
+            _info(f"OS Detection: {MAGENTA}{os_name}{RESET} (Accuracy: {os_acc or 'unknown'}%)")
+
+        if host_scripts:
+            _info("Host-level NSE script outputs:")
+            for script_id, output in host_scripts.items():
+                if not str(output).strip():
+                    continue
+                snippet = str(output).strip().replace("\n", " ")[:120]
+                if len(str(output).strip()) > 120:
+                    snippet += "…"
+                print(f"    {GREY}[host script: {script_id}]{RESET} {DIM}{snippet}{RESET}")
 
         if not ports:
             _warn("No open ports found.")
             continue
 
-        print(f"\n    {BOLD}{GREY}{'PORT':<8} {'PROTO':<6} {'SERVICE':<15} {'PRODUCT':<20} {'VERSION'}{RESET}")
-        print(f"    {GREY}{'─' * 80}{RESET}")
+        print(f"\n    {BOLD}{GREY}{'PORT':<6} {'PROTO':<6} {'SERVICE':<15} {'PRODUCT':<18} {'VERSION':<16} {'FINGERPRINT':<18} {'SCRIPTS'}{RESET}")
+        print(f"    {GREY}{'─' * 120}{RESET}")
 
         for p in ports:
-            pcolor = GREEN if p.get("state") == "open" else GREY
-            extra = f" {p.get('extra_info', '')}" if p.get("extra_info") else ""
-            tunnel = f" [{p.get('tunnel')}]" if p.get("tunnel") else ""
+            port_state = p.get("state", "")
+            pcolor = GREEN if port_state == "open" else YELLOW if port_state in {"filtered", "closed"} else GREY
+            fingerprint = p.get("service_fingerprint", "")
+            script_labels = ", ".join((p.get("scripts") or {}).keys()) if p.get("scripts") else ""
             print(
-                f"    {BOLD}{pcolor}{str(p.get('port', '')):<8}{RESET}"
+                f"    {BOLD}{pcolor}{str(p.get('port', '')):<6}{RESET}"
                 f"{p.get('protocol', ''):<6}"
                 f"{CYAN}{p.get('service', ''):<15}{RESET}"
-                f"{MAGENTA}{p.get('product', ''):<20}{RESET}"
-                f"{WHITE}{p.get('version', '')}{extra}{tunnel}{RESET}"
+                f"{MAGENTA}{p.get('product', ''):<18}{RESET}"
+                f"{WHITE}{p.get('version', ''):<16}{RESET}"
+                f"{GREY}{fingerprint:<18}{RESET}"
+                f"{YELLOW}{script_labels}{RESET}"
             )
-            # Print NSE script results
-            scripts = p.get("scripts", {})
-            for script_id, script_out in scripts.items():
-                if script_out.strip():
-                    # Truncate long outputs to first 150 chars
-                    preview = script_out.strip().replace("\n", " ")[:150]
+
+            service_details = p.get("service_details", {}) or {}
+            if service_details:
+                banner = service_details.get("banner", "")
+                http_title = service_details.get("http_title", "")
+                http_server = service_details.get("http_server_header", "")
+                http_methods = service_details.get("http_methods", "")
+                ssl_info = service_details.get("ssl_tls_info", "")
+                robots = service_details.get("robots", "")
+                if banner:
+                    _info(f"      Banner: {banner}")
+                if http_title:
+                    _info(f"      HTTP Title: {http_title}")
+                if http_server:
+                    _info(f"      HTTP Server Header: {http_server}")
+                if http_methods:
+                    _info(f"      HTTP Methods: {http_methods}")
+                if ssl_info:
+                    _info(f"      SSL/TLS Info: {ssl_info}")
+                if robots:
+                    _info(f"      Robots.txt: {robots}")
+
+            for script_id, script_out in (p.get("scripts") or {}).items():
+                if str(script_out).strip():
+                    preview = str(script_out).strip().replace("\n", " ")
+                    if len(preview) > 150:
+                        preview = preview[:150] + "…"
                     print(f"            {GREY}[{script_id}]{RESET} {DIM}{preview}{RESET}")
+
+        if traceroute:
+            _info("Traceroute path:")
+            for hop in traceroute:
+                _info(f"TTL {hop.get('ttl')} → {hop.get('ipaddr')} {hop.get('host', '')} | RTT: {hop.get('rtt')}")
+
+    analysis = data.get("analysis", {}) or {}
+    if analysis:
+        _section("Nmap Analysis Summary", "🧠")
+        risk_score = analysis.get("risk_score", {})
+        _row("Risk Level", risk_score.get("level", "N/A"))
+        _row("Risk Score", f"{risk_score.get('score', 0)}/{risk_score.get('scale_max', 'N/A')}")
+        ai_summary = analysis.get("ai_summary", "")
+        if ai_summary:
+            print(f"\n  {WHITE}Summary:{RESET} {ai_summary}")
+
+        findings = analysis.get("findings", [])
+        if findings:
+            print(f"\n  {BOLD}Top Findings:{RESET}")
+            for finding in findings[:5]:
+                severity = _color_severity(finding.get("severity", "informational"))
+                print(f"    - {severity} {finding.get('name')} — {finding.get('explanation')}")
+                print(f"      Recommendation: {finding.get('recommendation')}")
 
 
 # ─── WhatWeb ──────────────────────────────────────────────────────────────────
@@ -245,6 +318,47 @@ def print_whatweb_results(data: dict[str, Any]) -> None:
                 _ok("  ".join(parts))
 
 
+def print_naabu_results(data: dict[str, Any]) -> None:
+    """Prints Naabu port discovery results."""
+    _section("PORT DISCOVERY — Naabu Results", "🔎")
+    status = data.get("status", "unknown")
+    if status == "skipped":
+        _warn(f"Skipped: {data.get('reason', 'tool not installed')}")
+        return
+
+    ports = data.get("ports", [])
+    _row("Status", status)
+    _row("Ports Found", f"{BOLD}{GREEN}{len(ports)}{RESET}")
+    if not ports:
+        _warn("No open ports discovered by Naabu.")
+        return
+
+    for i, p in enumerate(ports, 1):
+        print(f"  {GREY}{i:>3}.{RESET} {CYAN}{p.get('ip')}{RESET}:{BOLD}{GREEN}{p.get('port')}{RESET}")
+
+
+def print_linkfinder_results(data: dict[str, Any]) -> None:
+    """Prints LinkFinder hidden endpoint discovery results."""
+    _section("HIDDEN ENDPOINT DISCOVERY — LinkFinder", "🔗")
+    status = data.get("status", "unknown")
+    if status == "skipped":
+        _warn(f"Skipped: {data.get('reason', 'tool not installed')}")
+        return
+
+    endpoints = data.get("endpoints", [])
+    _row("Status", status)
+    _row("Endpoints Found", f"{BOLD}{GREEN}{len(endpoints)}{RESET}")
+    if not endpoints:
+        _warn("No endpoints discovered by LinkFinder.")
+        return
+
+    for e in endpoints[:200]:
+        etype = e.get("type", "Other")
+        ep = e.get("endpoint", "")
+        src = e.get("source", "")
+        print(f"  {GREY}- {RESET}{CYAN}{ep}{RESET}  {MAGENTA}[{etype}]{RESET}  {DIM}{src}{RESET}")
+
+
 # ─── Katana ───────────────────────────────────────────────────────────────────
 
 def print_katana_results(data: dict[str, Any]) -> None:
@@ -266,6 +380,73 @@ def print_katana_results(data: dict[str, Any]) -> None:
             print(f"    {GREY}{i:>4}.{RESET}  {CYAN}{ep}{RESET}")
     else:
         _warn("No endpoints crawled.")
+
+
+# ─── SecretFinder ────────────────────────────────────────────────────────────
+
+def print_secretfinder_results(data: dict[str, Any]) -> None:
+    """Prints SecretFinder JavaScript secret scanning results with severity coloring."""
+    _section("SECRETFINDER — JavaScript Secret Analysis", "🔑")
+    status = data.get("status", "unknown")
+
+    if status == "skipped":
+        _warn(f"Skipped: {data.get('reason', 'SecretFinder not available')}")
+        return
+
+    js_total   = data.get("js_files_total", 0)
+    js_scanned = data.get("js_files_scanned", 0)
+    js_failed  = data.get("js_files_failed", 0)
+    files_with_findings = data.get("files_with_findings", 0)
+    secrets    = data.get("secrets_found", 0)
+    findings   = data.get("findings", [])
+    sev_counts = data.get("severity_counts", {})
+
+    _row("Status",             status)
+    _row("JS Files Total",     str(js_total))
+    _row("JS Files Scanned",   f"{BOLD}{GREEN}{js_scanned}{RESET}")
+    _row("JS Files Failed",    f"{BOLD}{(RED if js_failed else GREY)}{js_failed}{RESET}")
+    _row("Files With Findings", f"{BOLD}{(RED if files_with_findings else GREEN)}{files_with_findings}{RESET}")
+    _row("Meaningful Findings", f"{BOLD}{(RED if secrets else GREEN)}{secrets}{RESET}")
+
+    if sev_counts:
+        print()
+        _row("Critical",       f"{BOLD}{RED}{sev_counts.get('critical', 0)}{RESET}")
+        _row("High",           f"{BOLD}{ORANGE}{sev_counts.get('high', 0)}{RESET}")
+        _row("Medium",         f"{BOLD}{YELLOW}{sev_counts.get('medium', 0)}{RESET}")
+        _row("Low",            f"{BOLD}{BLUE}{sev_counts.get('low', 0)}{RESET}")
+
+    if not findings:
+        print()
+        _ok("No sensitive secrets detected")
+        return
+
+    print(f"\n  {BOLD}{RED}  ⚠  {secrets} meaningful secret finding(s) detected:{RESET}")
+    print(f"\n    {BOLD}{GREY}{'SEV':<8} {'TYPE':<28} {'LINE':<6} {'SOURCE URL'}{RESET}")
+    print(f"    {GREY}{'─' * 90}{RESET}")
+
+    for f in findings:
+        sev = f.get("severity", "low")
+        stype = f.get("secret_type", "Other Secret")
+        url = f.get("url", "")
+        line_number = f.get("line_number")
+        value = f.get("value", "")
+        sev_label = _color_severity(sev)
+
+        short_url = url if len(url) <= 70 else "…" + url[-69:]
+        line_text = str(line_number) if line_number is not None else "-"
+
+        print(
+            f"    {sev_label:<8}  "
+            f"{CYAN}{stype:<28}{RESET}  "
+            f"{GREY}{line_text:<6}{RESET}  "
+            f"{DIM}{short_url}{RESET}"
+        )
+        if value:
+            print(f"    {GREY}{'':>10}↳ {WHITE}{value}{RESET}")
+
+    if data.get("output_file"):
+        print()
+        _info(f"Secrets saved to: {data['output_file']}")
 
 
 # ─── TestSSL ──────────────────────────────────────────────────────────────────
@@ -400,11 +581,27 @@ def print_nuclei_results(data: dict[str, Any]) -> None:
 # ─── Final Summary ────────────────────────────────────────────────────────────
 
 def print_final_summary(target: str, recon: dict, scan: dict, report_paths: dict) -> None:
-    """Prints final colored CLI summary with counts and report locations."""
-    nuclei_vulns = scan.get("nuclei", {}).get("vulnerabilities", [])
+    """Prints a structured CLI summary with a per-tool breakdown and overall highlights."""
+    subdomains = recon.get("subfinder", {}).get("subdomains", [])
+    services = recon.get("httpx", {}).get("services", [])
+    nmap_hosts = recon.get("nmap", {}).get("hosts", [])
+    whatweb_tech = recon.get("whatweb", {}).get("tech_stack", [])
+    katana_endpoints = recon.get("katana", {}).get("endpoints", [])
+    naabu_ports = recon.get("naabu", {}).get("ports", [])
+    linkfinder_endpoints = recon.get("linkfinder", {}).get("endpoints", [])
+
+    sf_data = recon.get("secretfinder", {})
+    sf_secrets = sf_data.get("secrets_found", 0)
+    sf_js_scanned = sf_data.get("js_files_scanned", 0)
+    sf_files_with_finding = sf_data.get("files_with_findings", 0)
+    sf_sev = sf_data.get("severity_counts", {})
+    sf_critical_high = sf_sev.get("critical", 0) + sf_sev.get("high", 0)
+
     testssl_findings = scan.get("testssl", {}).get("findings", [])
     testssl_warnings = scan.get("testssl", {}).get("summary", {}).get("warnings", [])
-    critical_count = sum(
+    nuclei_vulns = scan.get("nuclei", {}).get("vulnerabilities", [])
+
+    nuclei_critical = sum(
         1 for v in nuclei_vulns
         if v.get("severity", "").lower() in ("critical", "high")
     )
@@ -412,34 +609,77 @@ def print_final_summary(target: str, recon: dict, scan: dict, report_paths: dict
         1 for f in testssl_findings
         if f.get("severity", "").upper() in ("HIGH", "CRITICAL")
     )
-    all_ports = sum(
-        len(h.get("open_ports", []))
-        for h in recon.get("nmap", {}).get("hosts", [])
-    )
+    all_ports = sum(len(h.get("open_ports", [])) for h in nmap_hosts)
+    tech_count = sum(len(i.get("technologies", [])) for i in whatweb_tech)
 
-    print(f"\n{BOLD}{CYAN}{'═' * 70}{RESET}")
-    print(f"{BOLD}{WHITE}  ASSESSMENT COMPLETE — {target}{RESET}")
-    print(f"{BOLD}{CYAN}{'═' * 70}{RESET}")
-    print(f"  {GREY}{'Subdomains Discovered':<30}{RESET}: {GREEN}{BOLD}{len(recon.get('subfinder', {}).get('subdomains', []))}{RESET}")
-    print(f"  {GREY}{'HTTP Services Probed':<30}{RESET}: {GREEN}{BOLD}{len(recon.get('httpx', {}).get('services', []))}{RESET}")
-    print(f"  {GREY}{'Open Ports (Nmap)':<30}{RESET}: {GREEN}{BOLD}{all_ports}{RESET}")
-    print(f"  {GREY}{'Technologies (WhatWeb)':<30}{RESET}: {GREEN}{BOLD}{sum(len(i.get('technologies', [])) for i in recon.get('whatweb', {}).get('tech_stack', []))}{RESET}")
-    print(f"  {GREY}{'Crawled Endpoints (Katana)':<30}{RESET}: {GREEN}{BOLD}{len(recon.get('katana', {}).get('endpoints', []))}{RESET}")
-    print(f"  {GREY}{'TLS/SSL Findings':<30}{RESET}: {(RED + BOLD) if testssl_warnings else (GREEN + BOLD)}{len(testssl_warnings)}{RESET}")
-    print(f"  {GREY}{'TLS/SSL High/Critical':<30}{RESET}: {(RED + BOLD) if tls_high else (GREEN + BOLD)}{tls_high}{RESET}")
-    print(f"  {GREY}{'Nuclei Vulnerabilities':<30}{RESET}: {(RED + BOLD) if nuclei_vulns else (GREEN + BOLD)}{len(nuclei_vulns)}{RESET}")
+    def _tool_status_label(status: str) -> tuple[str, str]:
+        status = (status or "unknown").lower()
+        if status in {"success", "ok", "completed"}:
+            return GREEN, "[OK]"
+        if status in {"skipped", "disabled"}:
+            return YELLOW, "[SKIP]"
+        if status in {"error", "failed"}:
+            return RED, "[ERR]"
+        return GREY, "[INFO]"
 
-    if critical_count > 0 or tls_high > 0:
-        total_crit = critical_count + tls_high
-        print(f"\n  {BOLD}{RED}⚠  {total_crit} CRITICAL/HIGH findings require immediate attention!{RESET}")
+    print(f"\n{BOLD}{CYAN}{'═' * 74}{RESET}")
+    print(f"{BOLD}{WHITE}  📊 COMPREHENSIVE ASSESSMENT EXECUTIVE SUMMARY — {target}{RESET}")
+    print(f"{BOLD}{CYAN}{'═' * 74}{RESET}")
+
+    print(f"\n  {BOLD}{WHITE}TOOL-BY-TOOL SUMMARY:{RESET}")
+    tool_specs = [
+        ("Subfinder", recon.get("subfinder", {}), f"{len(subdomains)} subdomains"),
+        ("HTTPX", recon.get("httpx", {}), f"{len(services)} services"),
+        ("Naabu", recon.get("naabu", {}), f"{len(naabu_ports)} open ports"),
+        ("Nmap", recon.get("nmap", {}), f"{len(nmap_hosts)} hosts / {all_ports} open ports"),
+        ("WhatWeb", recon.get("whatweb", {}), f"{tech_count} technologies"),
+        ("Katana", recon.get("katana", {}), f"{len(katana_endpoints)} endpoints"),
+        ("LinkFinder", recon.get("linkfinder", {}), f"{len(linkfinder_endpoints)} endpoints"),
+        ("SecretFinder", recon.get("secretfinder", {}), f"{sf_js_scanned} JS files / {sf_secrets} findings"),
+        ("TestSSL", scan.get("testssl", {}), f"{len(testssl_findings)} findings / {len(testssl_warnings)} alerts"),
+        ("Nuclei", scan.get("nuclei", {}), f"{len(nuclei_vulns)} vulnerabilities"),
+    ]
+
+    for name, data, detail in tool_specs:
+        color, status_symbol = _tool_status_label(data.get("status", "unknown"))
+        reason = data.get("reason", "")
+        print(f"  {color}{status_symbol}{RESET} {BOLD}{name:<14}{RESET}: {WHITE}{detail}{RESET}")
+        if reason:
+            print(f"      {GREY}{reason}{RESET}")
+
+    print(f"\n  {BOLD}{WHITE}RECONNAISSANCE & ENUMERATION:{RESET}")
+    print(f"  {GREY}{'Subdomains Discovered':<24}{RESET}: {GREEN}{BOLD}{len(subdomains)}{RESET}")
+    print(f"  {GREY}{'HTTP Services Probed':<24}{RESET}: {GREEN}{BOLD}{len(services)}{RESET}")
+    print(f"  {GREY}{'Open Ports Discovered':<24}{RESET}: {GREEN}{BOLD}{all_ports}{RESET}")
+    print(f"  {GREY}{'Tech Stack Components':<24}{RESET}: {GREEN}{BOLD}{tech_count}{RESET}")
+    print(f"  {GREY}{'Crawled Endpoints':<24}{RESET}: {GREEN}{BOLD}{len(katana_endpoints)}{RESET}")
+
+    print(f"\n  {BOLD}{WHITE}SECRET & SENSITIVE DATA ANALYSIS:{RESET}")
+    print(f"  {GREY}{'JavaScript Files Scanned':<24}{RESET}: {GREEN}{BOLD}{sf_js_scanned}{RESET}")
+    print(f"  {GREY}{'Files With Findings':<24}{RESET}: {(RED + BOLD) if sf_files_with_finding else (GREEN + BOLD)}{sf_files_with_finding}{RESET}")
+    print(f"  {GREY}{'Meaningful Findings':<24}{RESET}: {(RED + BOLD) if sf_secrets else (GREEN + BOLD)}{sf_secrets}{RESET}")
+    if sf_secrets > 0:
+        print(f"    {GREY}├── Critical Severity Secrets{RESET}    : {BOLD}{RED}{sf_sev.get('critical', 0)}{RESET}")
+        print(f"    {GREY}├── High Severity Secrets{RESET}        : {BOLD}{ORANGE}{sf_sev.get('high', 0)}{RESET}")
+        print(f"    {GREY}├── Medium Severity Secrets{RESET}      : {BOLD}{YELLOW}{sf_sev.get('medium', 0)}{RESET}")
+        print(f"    {GREY}└── Low / Informational Secrets{RESET}  : {GREY}{sf_sev.get('low', 0) + sf_sev.get('informational', 0)}{RESET}")
+
+    print(f"\n  {BOLD}{WHITE}VULNERABILITY ASSESSMENT:{RESET}")
+    print(f"  {GREY}{'TLS/SSL Security Alerts':<24}{RESET}: {(RED + BOLD) if testssl_warnings else (GREEN + BOLD)}{len(testssl_warnings)}{RESET}")
+    print(f"  {GREY}{'TLS/SSL High/Critical Alerts':<24}{RESET}: {(RED + BOLD) if tls_high else (GREEN + BOLD)}{tls_high}{RESET}")
+    print(f"  {GREY}{'Nuclei Vulnerabilities Found':<24}{RESET}: {(RED + BOLD) if nuclei_vulns else (GREEN + BOLD)}{len(nuclei_vulns)}{RESET}")
+
+    total_critical = nuclei_critical + tls_high + sf_critical_high
+    if total_critical > 0:
+        print(f"\n  {BOLD}{RED}⚠  CRITICAL ACTION REQUIRED: {total_critical} High/Critical security issue(s) identified!{RESET}")
 
     testssl_grade = scan.get("testssl", {}).get("summary", {}).get("grade", "")
     if testssl_grade:
         gcolor = GREEN if testssl_grade.startswith("A") else (YELLOW if testssl_grade.startswith("B") else RED)
-        print(f"  {GREY}{'TLS Overall Grade':<30}{RESET}: {BOLD}{gcolor}{testssl_grade}{RESET}")
+        print(f"  {GREY}{'Overall TLS Configuration Grade':<24}{RESET}: {BOLD}{gcolor}{testssl_grade}{RESET}")
 
-    print(f"\n  {BOLD}{'─' * 66}{RESET}")
-    print(f"  {GREEN}[+]{RESET} JSON Report   : {CYAN}{report_paths.get('json', '')}{RESET}")
-    print(f"  {GREEN}[+]{RESET} Markdown       : {CYAN}{report_paths.get('markdown', '')}{RESET}")
-    print(f"  {GREEN}[+]{RESET} HTML Report    : {CYAN}{report_paths.get('html', '')}{RESET}")
-    print(f"{BOLD}{CYAN}{'═' * 70}{RESET}\n")
+    print(f"\n  {BOLD}{CYAN}{'─' * 74}{RESET}")
+    print(f"  {GREEN}[+]{RESET} Consolidated JSON Report : {CYAN}{report_paths.get('json', '')}{RESET}")
+    print(f"  {GREEN}[+]{RESET} Executive Markdown       : {CYAN}{report_paths.get('markdown', '')}{RESET}")
+    print(f"  {GREEN}[+]{RESET} Interactive HTML Report  : {CYAN}{report_paths.get('html', '')}{RESET}")
+    print(f"{BOLD}{CYAN}{'═' * 74}{RESET}\n")

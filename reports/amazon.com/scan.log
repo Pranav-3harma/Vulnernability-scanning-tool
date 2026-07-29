@@ -1,0 +1,31 @@
+2026-07-28 11:07:15,087 [INFO] [main.py:35]: Initializing Modular Vulnerability Assessment Session...
+2026-07-28 11:07:15,088 [INFO] [main.py:36]: Target Acquired: amazon.com
+2026-07-28 11:07:15,088 [INFO] [main.py:37]: Output Directory Configured: /home/kali/Desktop/secure-site-scan-main/reports/amazon.com
+2026-07-28 11:07:15,088 [INFO] [runner.py:57]: === Starting Assessment Pipeline on Target: amazon.com ===
+2026-07-28 11:07:15,088 [INFO] [runner.py:60]: --> [Phase 1/2] Launching Reconnaissance & Service Enumeration Tools...
+2026-07-28 11:07:15,088 [INFO] [recon.py:61]: Running [Subfinder Subdomain Discovery] on: amazon.com
+2026-07-28 11:12:21,316 [ERROR] [executor.py:82]: Command timed out after 300 seconds: subfinder -d amazon.com -o reports/amazon.com/subfinder_output.txt -silent -all
+2026-07-28 11:12:21,317 [INFO] [recon.py:190]: Running [HTTP Service Prober] on target: amazon.com
+2026-07-28 11:12:26,811 [INFO] [recon.py:248]: Running [Nmap Port & Service Scanner] on: amazon.com
+2026-07-28 11:14:33,989 [INFO] [recon.py:393]: Running [WhatWeb Tech Stack Fingerprinter] on: https://amazon.com
+2026-07-28 11:14:43,917 [INFO] [recon.py:486]: Running [Katana Web Crawler] on: https://amazon.com
+2026-07-28 11:14:57,856 [INFO] [secretfinder.py:265]: [SecretFinder JavaScript Secret Scanner] ─── Starting SecretFinder JavaScript Analysis ───
+2026-07-28 11:14:57,856 [INFO] [secretfinder.py:284]: [SecretFinder JavaScript Secret Scanner] Katana discovered 2 total endpoints; 0 unique JavaScript files to scan.
+2026-07-28 11:14:57,857 [INFO] [secretfinder.py:290]: [SecretFinder JavaScript Secret Scanner] No JavaScript files found in Katana output. Skipping.
+2026-07-28 11:14:57,857 [INFO] [runner.py:98]: --> [Phase 2/3] Launching Vulnerability Scanners...
+2026-07-28 11:14:57,857 [INFO] [scanners.py:114]: Running [TestSSL Comprehensive TLS/SSL Auditor] on: amazon.com:443
+2026-07-28 11:20:03,381 [ERROR] [executor.py:82]: Command timed out after 300 seconds: testssl --color 2 --overwrite --jsonfile-pretty reports/amazon.com/testssl_output.json amazon.com:443
+2026-07-28 11:20:03,382 [INFO] [scanners.py:253]: Running [Nuclei Vulnerability Scanner] on: https://amazon.com
+2026-07-28 11:25:09,208 [ERROR] [executor.py:82]: Command timed out after 300 seconds: nuclei -u https://amazon.com -j -o reports/amazon.com/nuclei_output.json -silent -no-color
+2026-07-28 11:25:09,209 [INFO] [runner.py:112]: --> [Phase 3/3] Generating Consolidated Reports...
+2026-07-28 11:25:09,210 [INFO] [reporter.py:50]: Master JSON report generated at: /home/kali/Desktop/secure-site-scan-main/reports/amazon.com/report.json
+2026-07-28 11:25:09,210 [INFO] [reporter.py:190]: Executive Markdown summary generated at: /home/kali/Desktop/secure-site-scan-main/reports/amazon.com/summary.md
+2026-07-29 16:01:21,549 [INFO] [main.py:34]: Initializing Modular Vulnerability Assessment Session...
+2026-07-29 16:01:21,550 [INFO] [main.py:35]: Target Acquired: amazon.com
+2026-07-29 16:01:21,550 [INFO] [main.py:36]: Output Directory Configured: /home/kali/Desktop/secure-site-scan-main/reports/amazon.com
+2026-07-29 16:02:20,130 [INFO] [main.py:34]: Initializing Modular Vulnerability Assessment Session...
+2026-07-29 16:02:20,130 [INFO] [main.py:35]: Target Acquired: lpu.in
+2026-07-29 16:02:20,130 [INFO] [main.py:36]: Output Directory Configured: /home/kali/Desktop/secure-site-scan-main/reports/lpu.in
+2026-07-29 16:02:21,774 [INFO] [runner.py:35]: === Starting Assessment Pipeline on Target: lpu.in ===
+2026-07-29 16:02:21,775 [INFO] [runner.py:51]: --> Running module: Subfinder
+2026-07-29 16:02:21,783 [INFO] [recon.py:63]: Running [Subfinder Subdomain Discovery] on: lpu.in

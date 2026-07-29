@@ -1,0 +1,38 @@
+2026-07-29 14:33:41,922 [INFO] [main.py:34]: Initializing Modular Vulnerability Assessment Session...
+2026-07-29 14:33:41,922 [INFO] [main.py:35]: Target Acquired: flipkart.in
+2026-07-29 14:33:41,923 [INFO] [main.py:36]: Output Directory Configured: /home/kali/Desktop/secure-site-scan-main/reports/flipkart.in
+2026-07-29 14:33:45,024 [INFO] [runner.py:35]: === Starting Assessment Pipeline on Target: flipkart.in ===
+2026-07-29 14:33:45,024 [INFO] [runner.py:51]: --> Running module: Subfinder
+2026-07-29 14:33:45,031 [INFO] [recon.py:63]: Running [Subfinder Subdomain Discovery] on: flipkart.in
+2026-07-29 14:33:50,902 [INFO] [runner.py:51]: --> Running module: HTTPX
+2026-07-29 14:33:50,902 [INFO] [recon.py:192]: Running [HTTP Service Prober] on target: flipkart.in
+2026-07-29 14:33:54,353 [INFO] [runner.py:51]: --> Running module: Naabu
+2026-07-29 14:33:54,353 [INFO] [naabu.py:42]: Starting Naabu on: flipkart.in
+2026-07-29 14:34:01,300 [INFO] [naabu.py:72]: Naabu discovered 0 open port(s)
+2026-07-29 14:34:01,300 [INFO] [runner.py:51]: --> Running module: Nmap
+2026-07-29 14:34:01,301 [INFO] [recon.py:250]: Running [Nmap Port & Service Scanner] on: flipkart.in
+2026-07-29 14:34:16,343 [INFO] [runner.py:51]: --> Running module: WhatWeb
+2026-07-29 14:34:16,344 [INFO] [recon.py:697]: Running [WhatWeb Tech Stack Fingerprinter] on: https://flipkart.in
+2026-07-29 14:34:23,167 [INFO] [runner.py:51]: --> Running module: Katana
+2026-07-29 14:34:23,168 [INFO] [recon.py:790]: Running [Katana Web Crawler] on: https://flipkart.in
+2026-07-29 14:34:34,258 [INFO] [runner.py:51]: --> Running module: LinkFinder
+2026-07-29 14:34:34,343 [INFO] [linkfinder.py:113]: Running LinkFinder on 1 JavaScript candidate(s)
+2026-07-29 14:34:36,326 [INFO] [runner.py:51]: --> Running module: SecretFinder
+2026-07-29 14:34:36,327 [INFO] [secretfinder.py:398]: [SecretFinder JavaScript Secret Scanner] ─── Starting SecretFinder JavaScript Analysis ───
+2026-07-29 14:34:36,327 [INFO] [secretfinder.py:422]: [SecretFinder JavaScript Secret Scanner] No explicit JS endpoints were found. Falling back to target URL: https://flipkart.in
+2026-07-29 14:34:36,327 [INFO] [secretfinder.py:428]: [SecretFinder JavaScript Secret Scanner] Discovered 1 JavaScript source(s) for SecretFinder analysis.
+2026-07-29 14:34:36,327 [INFO] [secretfinder.py:441]: [SecretFinder JavaScript Secret Scanner] Scanning JS target: https://flipkart.in
+2026-07-29 14:35:30,887 [INFO] [secretfinder.py:455]: [SecretFinder JavaScript Secret Scanner] 636 finding(s) discovered in https://flipkart.in
+2026-07-29 14:35:30,893 [INFO] [secretfinder.py:604]: [SecretFinder JavaScript Secret Scanner] Secrets JSON saved to: /home/kali/Desktop/secure-site-scan-main/reports/flipkart.in/secrets.json
+2026-07-29 14:35:30,893 [INFO] [secretfinder.py:470]: [SecretFinder JavaScript Secret Scanner] Scan complete — JS targets: 1 total / 1 scanned / 0 failed | Unique findings: 636
+2026-07-29 14:35:30,902 [INFO] [runner.py:51]: --> Running module: TestSSL
+2026-07-29 14:35:30,903 [INFO] [scanners.py:114]: Running [TestSSL Comprehensive TLS/SSL Auditor] on: flipkart.in:443
+2026-07-29 14:40:31,005 [ERROR] [executor.py:120]: Command timed out after 300 seconds: testssl --color 2 --overwrite --jsonfile-pretty reports/flipkart.in/testssl_output.json flipkart.in:443
+2026-07-29 14:40:31,006 [INFO] [runner.py:51]: --> Running module: Nuclei
+2026-07-29 14:40:31,006 [INFO] [scanners.py:253]: Running [Nuclei Vulnerability Scanner] on: https://flipkart.in
+2026-07-29 14:45:31,076 [ERROR] [executor.py:120]: Command timed out after 300 seconds: nuclei -u https://flipkart.in -j -o reports/flipkart.in/nuclei_output.json -silent -no-color
+2026-07-29 14:45:31,077 [INFO] [runner.py:65]: --> Generating Consolidated Reports...
+2026-07-29 14:45:31,089 [INFO] [reporter.py:50]: Master JSON report generated at: /home/kali/Desktop/secure-site-scan-main/reports/flipkart.in/report.json
+2026-07-29 14:45:31,090 [INFO] [reporter.py:260]: Executive Markdown summary generated at: /home/kali/Desktop/secure-site-scan-main/reports/flipkart.in/summary.md
+2026-07-29 14:45:31,134 [INFO] [reporter.py:295]: Professional Jinja2 HTML report generated at: /home/kali/Desktop/secure-site-scan-main/reports/flipkart.in/report.html
+2026-07-29 14:45:31,134 [INFO] [runner.py:90]: === Assessment Pipeline Execution Finished ===

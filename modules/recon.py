@@ -6,8 +6,10 @@ Covers: Subfinder, HttpProber (curl-based), Nmap, WhatWeb, Katana.
 """
 
 import json
+import re
 import shutil
 import subprocess
+import time
 import xml.etree.ElementTree as ET
 from typing import Any
 from urllib.parse import urlparse
@@ -229,7 +231,7 @@ class HttpxScanner(BaseScanner):
 class NmapScanner(BaseScanner):
     """
     Nmap wrapper — full port scan with service/version + OS detection.
-    Uses: nmap -sV -sC --top-ports 1000 -T4 -oX <file> <host>
+    Uses full Nmap XML output to build a detailed host and service dashboard.
     """
 
     @property
@@ -250,123 +252,425 @@ class NmapScanner(BaseScanner):
 
         cmd = [
             self.tool_binary,
-            "-sV",              # Service/version detection
-            "-sC",              # Default scripts (banner grab, http-title, ssl-cert, etc.)
-            "--top-ports", "1000",
-            "-T4",              # Aggressive timing (faster)
-            "--open",           # Only show open ports
-            "-oX", str(out_file),
-            hostname
+            "-Pn",
+            "-sV",
+            "-sC",
+            "-O",
+            "-A",
+            "--top-ports", str(getattr(self.config, "nmap_scan_top_ports", 1000)),
+            "-T4",
         ]
-        result = execute_command(cmd, timeout=self.config.timeout, logger=self.logger)
+
+        if getattr(self.config, "nmap_enable_traceroute", True):
+            cmd.append("--traceroute")
+
+        if getattr(self.config, "nmap_enable_version_intensity", True):
+            cmd.append("--version-all")
+        else:
+            cmd.extend(["--version-intensity", "5"])
+
+        if getattr(self.config, "nmap_enable_udp", False):
+            cmd.append("-sU")
+
+        if getattr(self.config, "nmap_enable_vuln_scripts", True):
+            cmd.extend(["--script", "vuln"])
+
+        cmd.extend(["-oX", str(out_file), hostname])
+        result = execute_command(
+            cmd,
+            timeout=self.config.timeout,
+            logger=self.logger,
+            show_progress=True,
+        )
 
         xml_content = out_file.read_text(encoding="utf-8") if out_file.exists() else ""
         if not xml_content and result.stdout:
             xml_content = result.stdout
 
         parsed = self.parse_output(xml_content)
+        analysis = self._analyze_findings(parsed.get("hosts", []), parsed.get("scan_info", {}))
 
         return {
             "status": "success" if (result.success or parsed.get("hosts")) else "failed",
             "duration": result.duration,
+            "hostname": hostname,
+            "target": self.target,
             "hosts": parsed.get("hosts", []),
             "summary": parsed.get("summary", ""),
-            "output_file": str(out_file)
+            "scan_info": parsed.get("scan_info", {}),
+            "analysis": analysis,
+            "raw_xml": xml_content,
+            "output_file": str(out_file),
         }
 
     def parse_output(self, raw_output: str) -> dict[str, Any]:
         """Parses Nmap XML output into structured host/port dictionaries."""
         if not raw_output or not raw_output.strip():
-            return {"hosts": [], "summary": ""}
+            return {"hosts": [], "summary": "", "scan_info": {}}
 
-        hosts = []
+        hosts: list[dict[str, Any]] = []
         summary = ""
+        scan_info: dict[str, Any] = {}
+
         try:
             root = ET.fromstring(raw_output)
 
-            # Extract run summary
+            scan_info = {
+                "scanner": root.attrib.get("scanner", ""),
+                "args": root.attrib.get("args", ""),
+                "startstr": root.attrib.get("startstr", ""),
+                "version": root.attrib.get("version", ""),
+                "xmloutputversion": root.attrib.get("xmloutputversion", ""),
+            }
+
+            scaninfo_node = root.find("scaninfo")
+            if scaninfo_node is not None:
+                scan_info["scan_type"] = scaninfo_node.attrib.get("type", "")
+                scan_info["protocol"] = scaninfo_node.attrib.get("protocol", "")
+                scan_info["services"] = scaninfo_node.attrib.get("services", "")
+                scan_info["num_services"] = scaninfo_node.attrib.get("numservices", "")
+
             run_stats = root.find("runstats/finished")
             if run_stats is not None:
                 summary = run_stats.attrib.get("summary", "")
+                scan_info.update({
+                    "summary": summary,
+                    "elapsed": run_stats.attrib.get("elapsed", ""),
+                    "timestr": run_stats.attrib.get("timestr", ""),
+                    "hosts": run_stats.attrib.get("hosts", ""),
+                    "exit": run_stats.attrib.get("exit", ""),
+                    "reason": run_stats.attrib.get("reason", ""),
+                })
 
             for host_node in root.findall("host"):
-                # IP address
-                addr_node = host_node.find("address[@addrtype='ipv4']")
-                if addr_node is None:
-                    addr_node = host_node.find("address")
-                ip_addr = addr_node.attrib.get("addr", "") if addr_node is not None else ""
+                addresses = [
+                    {
+                        "addr": addr.attrib.get("addr", ""),
+                        "addrtype": addr.attrib.get("addrtype", ""),
+                        "vendor": addr.attrib.get("vendor", ""),
+                    }
+                    for addr in host_node.findall("address")
+                ]
 
-                # Hostname (DNS name)
-                hostname_node = host_node.find("hostnames/hostname")
-                dns_name = hostname_node.attrib.get("name", "") if hostname_node is not None else ""
+                hostnames = [
+                    hostname.attrib.get("name", "")
+                    for hostname in host_node.findall("hostnames/hostname")
+                ]
+                reverse_dns = [
+                    hostname.attrib.get("name", "")
+                    for hostname in host_node.findall("hostnames/hostname")
+                    if hostname.attrib.get("type", "") == "PTR"
+                ]
 
-                # Host state
                 status_node = host_node.find("status")
                 state = status_node.attrib.get("state", "unknown") if status_node is not None else "unknown"
 
-                # OS Detection
-                os_match = host_node.find("os/osmatch")
-                os_name = os_match.attrib.get("name", "") if os_match is not None else ""
-                os_acc = os_match.attrib.get("accuracy", "") if os_match is not None else ""
+                latency_ms = None
+                times_node = host_node.find("times")
+                if times_node is not None:
+                    srtt = times_node.attrib.get("srtt") or times_node.attrib.get("rtt")
+                    if srtt and srtt.isdigit():
+                        latency_ms = round(int(srtt) / 1000.0, 2)
 
-                ports = []
-                ports_node = host_node.find("ports")
-                if ports_node is not None:
-                    for port_node in ports_node.findall("port"):
-                        port_id = int(port_node.attrib.get("portid", 0))
-                        protocol = port_node.attrib.get("protocol", "tcp")
+                uptime_node = host_node.find("uptime")
+                uptime_seconds = None
+                uptime_lastboot = ""
+                if uptime_node is not None:
+                    uptime_seconds = int(uptime_node.attrib.get("seconds", "0") or "0")
+                    uptime_lastboot = uptime_node.attrib.get("lastboot", "")
 
-                        port_state_node = port_node.find("state")
-                        port_state = port_state_node.attrib.get("state", "") if port_state_node is not None else ""
+                os_node = host_node.find("os")
+                os_match_name = ""
+                os_accuracy = ""
+                os_classes: list[dict[str, Any]] = []
+                if os_node is not None:
+                    os_match = os_node.find("osmatch")
+                    if os_match is not None:
+                        os_match_name = os_match.attrib.get("name", "")
+                        os_accuracy = os_match.attrib.get("accuracy", "")
 
-                        if port_state != "open":
-                            continue
-
-                        service_node = port_node.find("service")
-                        service_name = ""
-                        product = ""
-                        version = ""
-                        extra_info = ""
-                        tunnel = ""
-                        if service_node is not None:
-                            service_name = service_node.attrib.get("name", "")
-                            product = service_node.attrib.get("product", "")
-                            version = service_node.attrib.get("version", "")
-                            extra_info = service_node.attrib.get("extrainfo", "")
-                            tunnel = service_node.attrib.get("tunnel", "")
-
-                        # NSE script output (e.g. http-title, ssl-cert)
-                        scripts: dict[str, str] = {}
-                        for script_node in port_node.findall("script"):
-                            sid = script_node.attrib.get("id", "")
-                            sout = script_node.attrib.get("output", "")
-                            scripts[sid] = sout
-
-                        ports.append({
-                            "port": port_id,
-                            "protocol": protocol,
-                            "state": port_state,
-                            "service": service_name,
-                            "product": product,
-                            "version": version,
-                            "extra_info": extra_info,
-                            "tunnel": tunnel,
-                            "scripts": scripts
+                    for os_class in os_node.findall("osclass"):
+                        os_classes.append({
+                            "vendor": os_class.attrib.get("vendor", ""),
+                            "osfamily": os_class.attrib.get("osfamily", ""),
+                            "osgen": os_class.attrib.get("osgen", ""),
+                            "type": os_class.attrib.get("type", ""),
+                            "accuracy": os_class.attrib.get("accuracy", ""),
+                            "cpe": os_class.attrib.get("cpe", ""),
                         })
 
+                host_scripts: dict[str, str] = {}
+                for script_node in host_node.findall("hostscript/script"):
+                    sid = script_node.attrib.get("id", "")
+                    if sid:
+                        host_scripts[sid] = script_node.attrib.get("output", "")
+
+                traceroute: list[dict[str, Any]] = []
+                for hop_node in host_node.findall("trace/hop"):
+                    traceroute.append({
+                        "ttl": hop_node.attrib.get("ttl", ""),
+                        "rtt": hop_node.attrib.get("rtt", ""),
+                        "ipaddr": hop_node.attrib.get("ipaddr", ""),
+                        "host": hop_node.attrib.get("host", ""),
+                    })
+
+                ports: list[dict[str, Any]] = []
+                for port_node in host_node.findall("ports/port"):
+                    port_state_node = port_node.find("state")
+                    port_state = port_state_node.attrib.get("state", "") if port_state_node is not None else ""
+                    port_reason = port_state_node.attrib.get("reason", "") if port_state_node is not None else ""
+
+                    service_node = port_node.find("service")
+                    service_name = ""
+                    product = ""
+                    version = ""
+                    extra_info = ""
+                    tunnel = ""
+                    method = ""
+                    confidence = ""
+                    service_fp = ""
+                    if service_node is not None:
+                        service_name = service_node.attrib.get("name", "")
+                        product = service_node.attrib.get("product", "")
+                        version = service_node.attrib.get("version", "")
+                        extra_info = service_node.attrib.get("extrainfo", "")
+                        tunnel = service_node.attrib.get("tunnel", "")
+                        method = service_node.attrib.get("method", "")
+                        confidence = service_node.attrib.get("conf", "")
+                        service_fp = service_node.attrib.get("servicefp", "")
+
+                    scripts: dict[str, str] = {}
+                    service_details: dict[str, Any] = {
+                        "banner": "",
+                        "service_fingerprint": service_fp,
+                        "protocol": service_name,
+                        "ssl_tls_info": "",
+                        "http_title": "",
+                        "http_server_header": "",
+                        "redirects": "",
+                        "robots": "",
+                        "http_methods": "",
+                        "allowed_methods": [],
+                        "raw_scripts": {},
+                    }
+
+                    for script_node in port_node.findall("script"):
+                        sid = script_node.attrib.get("id", "")
+                        sout = script_node.attrib.get("output", "")
+                        scripts[sid] = sout
+                        service_details["raw_scripts"][sid] = sout
+
+                        if sid == "http-title":
+                            service_details["http_title"] = sout
+                        elif sid == "http-server-header":
+                            service_details["http_server_header"] = sout
+                        elif sid == "http-methods":
+                            service_details["http_methods"] = sout
+                            methods = re.findall(r"[A-Z]{3,}", sout)
+                            service_details["allowed_methods"] = sorted(set(methods))
+                        elif sid == "robots.txt":
+                            service_details["robots"] = sout
+                        elif sid == "ssl-cert":
+                            service_details["ssl_tls_info"] = sout
+                        elif sid == "http-trace":
+                            service_details["redirects"] = sout
+                        elif sid == "ftp-anon" and "anonymous" in sout.lower():
+                            service_details["banner"] = sout
+
+                    banner_parts = [product, version, extra_info]
+                    service_details["banner"] = service_details["banner"] or " ".join([p for p in banner_parts if p]).strip()
+
+                    ports.append({
+                        "port": int(port_node.attrib.get("portid", "0") or "0"),
+                        "protocol": port_node.attrib.get("protocol", ""),
+                        "state": port_state,
+                        "service": service_name,
+                        "product": product,
+                        "version": version,
+                        "extra_info": extra_info,
+                        "tunnel": tunnel,
+                        "reason": port_reason,
+                        "confidence": confidence,
+                        "method": method,
+                        "service_fingerprint": service_fp,
+                        "service_details": service_details,
+                        "scripts": scripts,
+                    })
+
                 hosts.append({
-                    "ip": ip_addr,
-                    "hostname": dns_name,
+                    "ip": next((addr["addr"] for addr in addresses if addr["addrtype"] == "ipv4"), addresses[0]["addr"] if addresses else ""),
+                    "addresses": addresses,
+                    "hostnames": hostnames,
+                    "hostname": hostnames[0] if hostnames else "",
+                    "reverse_dns": reverse_dns,
                     "state": state,
-                    "os": os_name,
-                    "os_accuracy": os_acc,
-                    "open_ports": ports
+                    "latency_ms": latency_ms,
+                    "uptime_seconds": uptime_seconds,
+                    "uptime_lastboot": uptime_lastboot,
+                    "os": {
+                        "name": os_match_name,
+                        "accuracy": os_accuracy,
+                        "classes": os_classes,
+                    },
+                    "host_scripts": host_scripts,
+                    "traceroute": traceroute,
+                    "all_ports": ports,
+                    "open_ports": [p for p in ports if p.get("state") == "open"],
+                    "closed_ports": [p for p in ports if p.get("state") == "closed"],
+                    "filtered_ports": [p for p in ports if p.get("state") == "filtered"],
                 })
 
         except ET.ParseError as err:
             self.logger.error(f"Failed to parse Nmap XML: {err}")
 
-        return {"hosts": hosts, "summary": summary}
+        return {"hosts": hosts, "summary": summary, "scan_info": scan_info}
+
+    def _analyze_findings(self, hosts: list[dict[str, Any]], scan_info: dict[str, Any]) -> dict[str, Any]:
+        findings: list[dict[str, Any]] = []
+        recommendations: list[str] = []
+        tech_inventory: set[str] = set()
+        open_ports: set[str] = set()
+
+        def add_finding(finding_id: str, name: str, severity: str, explanation: str, evidence: str, recommendation: str) -> None:
+            findings.append({
+                "id": finding_id,
+                "name": name,
+                "severity": severity,
+                "explanation": explanation,
+                "evidence": evidence,
+                "recommendation": recommendation,
+            })
+            if recommendation not in recommendations:
+                recommendations.append(recommendation)
+
+        for host in hosts:
+            for p in host.get("all_ports", []):
+                service = (p.get("service") or "").lower()
+                port_key = f"{p.get('port')}/{p.get('protocol')}"
+                if service:
+                    tech_inventory.add(service)
+                if p.get("state") == "open":
+                    open_ports.add(port_key)
+
+                details = p.get("service_details", {}) or {}
+                raw_scripts = details.get("raw_scripts", {})
+                ssl_info = (details.get("ssl_tls_info") or "").lower()
+                http_methods = details.get("http_methods") or ""
+                robots = details.get("robots") or ""
+                http_title = (details.get("http_title") or "").lower()
+                banner = (details.get("banner") or "").lower()
+
+                if service == "ftp":
+                    anon_output = raw_scripts.get("ftp-anon", "")
+                    if anon_output and "anonymous" in anon_output.lower():
+                        add_finding(
+                            "anonymous-ftp",
+                            "Anonymous FTP Login Allowed",
+                            "high",
+                            "FTP anonymous access is enabled, which permits unauthenticated file listing or download.",
+                            anon_output,
+                            "Disable anonymous FTP access or restrict it to trusted accounts."
+                        )
+
+                if service == "smb" or p.get("port") in {139, 445}:
+                    smb_security = raw_scripts.get("smb-security-mode", "")
+                    if smb_security and "signing disabled" in smb_security.lower():
+                        add_finding(
+                            "smb-signing-disabled",
+                            "SMB Signing Disabled",
+                            "high",
+                            "SMB signing is disabled, increasing the risk of tampered SMB sessions.",
+                            smb_security,
+                            "Require SMB signing and enforce channel integrity."
+                        )
+
+                if ssl_info and any(token in ssl_info for token in ["self-signed", "expired", "weak", "obsolete", "sha1"]):
+                    add_finding(
+                        "weak-ssl-tls",
+                        "Weak SSL/TLS Configuration",
+                        "medium",
+                        "The service exposes SSL/TLS metadata that suggests weak or obsolete configuration.",
+                        ssl_info,
+                        "Review certificate validity and disable weak TLS ciphers."
+                    )
+
+                if "trace" in http_methods.lower() or "put" in http_methods.upper() or "delete" in http_methods.upper() or "connect" in http_methods.upper():
+                    add_finding(
+                        "unsafe-http-methods",
+                        "Unsafe HTTP Methods Exposed",
+                        "low",
+                        "The HTTP service supports methods that may increase attack surface.",
+                        http_methods,
+                        "Allow only safe HTTP methods and disable TRACE/PUT/DELETE/CONNECT if not required."
+                    )
+
+                if robots and "disallow" not in robots.lower():
+                    add_finding(
+                        "robots-public",
+                        "Public robots.txt",
+                        "informational",
+                        "A robots.txt file is accessible and may reveal hidden or sensitive paths.",
+                        robots,
+                        "Review robots.txt content to avoid exposing sensitive URLs."
+                    )
+
+                if any(tag in http_title for tag in ["admin", "login", "administrator"]):
+                    add_finding(
+                        "admin-page-detected",
+                        "Administrative Interface Detected",
+                        "medium",
+                        "The web title suggests an admin portal or login interface is exposed.",
+                        details.get("http_title", ""),
+                        "Restrict access to administrative endpoints with authentication and IP allowlisting."
+                    )
+
+        if not findings:
+            findings.append({
+                "id": "no-nmap-findings",
+                "name": "No significant Nmap-level findings detected",
+                "severity": "informational",
+                "explanation": "Parsed Nmap output did not reveal obvious protocol or service misconfigurations.",
+                "evidence": "",
+                "recommendation": "Continue with deeper application-layer and authenticated scanning.",
+            })
+            recommendations.append("Continue with deeper application-layer and authenticated scanning.")
+
+        severity_map = {
+            "critical": 10,
+            "high": 7,
+            "medium": 4,
+            "low": 2,
+            "informational": 0,
+        }
+        risk_score = sum(severity_map.get(item["severity"], 0) for item in findings)
+        risk_level = "Informational"
+        if any(item["severity"] == "critical" for item in findings):
+            risk_level = "Critical"
+        elif any(item["severity"] == "high" for item in findings):
+            risk_level = "High"
+        elif any(item["severity"] == "medium" for item in findings):
+            risk_level = "Medium"
+        elif any(item["severity"] == "low" for item in findings):
+            risk_level = "Low"
+
+        ai_summary_parts: list[str] = []
+        ai_summary_parts.append(f"Nmap scanned {len(hosts)} host(s) and found {len(open_ports)} open port(s).")
+        if tech_inventory:
+            ai_summary_parts.append(f"Detected service fingerprints include: {', '.join(sorted(tech_inventory))}.")
+        if findings and findings[0]["id"] != "no-nmap-findings":
+            ai_summary_parts.append("Key items include service misconfigurations, weak TLS indicators, and exposed admin or anonymous services.")
+        ai_summary_parts.append("Next steps: validate these findings with authenticated application testing and TLS hardening checks.")
+
+        return {
+            "findings": findings,
+            "risk_score": {
+                "level": risk_level,
+                "score": risk_score,
+                "scale_max": 50,
+            },
+            "recommendations": recommendations,
+            "ai_summary": " ".join(ai_summary_parts),
+        }
 
 
 # ─── WhatWeb ──────────────────────────────────────────────────────────────────

@@ -1,0 +1,19 @@
+[
+  {
+    "url": "https://www.nvidia.com/en-in/",
+    "probed_url": "https://www.nvidia.com/en-in/",
+    "status_code": 200,
+    "title": "World Leader in Artificial Intelligence Computing | NVIDIA",
+    "server": "Apache",
+    "x_powered_by": "",
+    "content_type": "text/html; charset=UTF-8",
+    "content_length": 739463,
+    "hsts": "",
+    "x_frame_options": "",
+    "x_content_type_options": "nosniff",
+    "redirect_location": "",
+    "technologies": [
+      "Apache"
+    ]
+  }
+]

@@ -1,0 +1,36 @@
+[
+  {
+    "url": "https://www.flipkart.com/",
+    "probed_url": "https://flipkart.com",
+    "status_code": 200,
+    "title": "Online Shopping Site for Mobiles, Electronics, Furniture, Grocery, Lifestyle, Books &amp; More. Best Offers!",
+    "server": "nginx",
+    "x_powered_by": "",
+    "content_type": "text/html; charset=utf-8",
+    "content_length": 1194662,
+    "hsts": "",
+    "x_frame_options": "",
+    "x_content_type_options": "",
+    "redirect_location": "https://www.flipkart.com/",
+    "technologies": [
+      "nginx"
+    ]
+  },
+  {
+    "url": "https://www.flipkart.com/",
+    "probed_url": "http://flipkart.com",
+    "status_code": 200,
+    "title": "Online Shopping Site for Mobiles, Electronics, Furniture, Grocery, Lifestyle, Books &amp; More. Best Offers!",
+    "server": "nginx",
+    "x_powered_by": "",
+    "content_type": "text/html; charset=utf-8",
+    "content_length": 1188686,
+    "hsts": "",
+    "x_frame_options": "",
+    "x_content_type_options": "",
+    "redirect_location": "https://www.flipkart.com/",
+    "technologies": [
+      "nginx"
+    ]
+  }
+]

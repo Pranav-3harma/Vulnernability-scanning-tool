@@ -1,0 +1,12 @@
+{
+          "Invocation"  : "testssl --color 2 --overwrite --jsonfile-pretty reports/flipkart.in/testssl_output.json flipkart.in:443",
+          "at"          : "kali:/usr/bin/openssl",
+          "version"     : "3.2.2 ",
+          "openssl"     : "OpenSSL 3.6.2 from Sat Apr 11 14:27:58 2026",
+          "startTime"   : "1785350130",
+          "scanResult"  : [
+                            {
+                                "id"           : "optimal_proto",
+                                "severity"     : "WARN",
+                                "finding"      : "Sockets didn't work. Testing NODE:443 only succeeded using /usr/bin/openssl."
+                           }
