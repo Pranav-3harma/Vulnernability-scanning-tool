@@ -1,258 +1,52 @@
-# TRINITY
+TRINITY is a modular, terminal-based reconnaissance framework designed for Kali Linux. It automates the initial stages of penetration testing by integrating multiple open-source security tools into a single interactive interface.
 
-## Automated Reconnaissance & Vulnerability Assessment Framework for Kali Linux
+Instead of manually running each reconnaissance tool separately, TRINITY executes them in a structured workflow, parses the results, performs AI-assisted analysis, and generates professional reports.
 
-```{=html}
-<p align="center">
-```
-A modular framework that automates reconnaissance, enumeration,
-technology fingerprinting and vulnerability assessment by orchestrating
-industry-standard open-source security tools.
-```{=html}
-</p>
-```
-> **Disclaimer**
->
-> TRINITY is intended **only** for authorized security assessments,
-> penetration testing engagements, lab environments, and bug bounty
-> programs where testing is explicitly permitted.
+---
 
-------------------------------------------------------------------------
+# ⚠ Disclaimer
 
-# Table of Contents
+TRINITY is intended **only for authorized penetration testing, bug bounty programs, lab environments, and security assessments where you have explicit permission to test the target.**
 
-1.  Overview
-2.  Features
-3.  Architecture
-4.  Reconnaissance Workflow
-5.  Scan Profiles
-6.  Integrated Tools
-7.  Installation
-8.  Usage
-9.  Project Structure
-10. Reports
-11. Roadmap
-12. License
+---
 
-------------------------------------------------------------------------
+# 🖥 System Requirements
 
-# Overview
+| Requirement | Minimum |
+|-------------|----------|
+| Operating System | Kali Linux (Recommended) |
+| Python | 3.10+ |
+| Go | 1.20+ |
+| RAM | 4 GB |
+| Recommended RAM | 8 GB+ |
+| CPU | Dual Core |
+| Recommended CPU | Quad Core |
+| Disk Space | 2 GB |
+| Internet | Required |
 
-TRINITY is a terminal-based automation framework developed for Kali
-Linux. Instead of manually running multiple reconnaissance tools one by
-one, TRINITY executes them in a structured workflow, parses their
-results, presents readable output, and generates professional reports.
+---
 
-It is designed to reduce repetitive tasks while allowing users to choose
-between complete automated scans and individual tool execution.
+# 📦 Required Tools
 
-------------------------------------------------------------------------
+Install the following tools before running TRINITY.
 
-# Core Features
+- Nmap
+- Naabu
+- Subfinder
+- HTTPX
+- WhatWeb
+- Katana
+- LinkFinder
+- SecretFinder
+- Nuclei
 
--   Interactive CLI
--   Modular architecture
--   Multiple scan profiles
--   Automated reconnaissance workflow
--   AI-assisted result analysis
--   Colorized terminal dashboard
--   Structured HTML / JSON / Markdown reports
--   Logging
--   Expandable module system
+---
 
-------------------------------------------------------------------------
+# 📂 Project Structure
 
-# Architecture
-
-``` text
-                    +----------------+
-                    |     USER       |
-                    +-------+--------+
-                            |
-                            v
-                 +----------------------+
-                 |    TRINITY CLI       |
-                 +----------+-----------+
-                            |
-        +-------------------+-------------------+
-        |                   |                   |
-        v                   v                   v
- Recon Modules       Scan Engine         Report Engine
-        |                   |                   |
-        +---------+---------+-------------------+
-                  |
-                  v
-          External Security Tools
-                  |
-  +---------------------------------------------+
-  | Nmap | Naabu | HTTPX | WhatWeb | Katana     |
-  | Subfinder | LinkFinder | SecretFinder       |
-  | Nuclei | Other Modules                      |
-  +---------------------------------------------+
-                  |
-                  v
-        Parsed & Structured Results
-                  |
-                  v
-      HTML • Markdown • JSON • Terminal
-```
-
-------------------------------------------------------------------------
-
-# Reconnaissance Workflow
-
-``` text
-                    Target
-                       |
-                       v
-              Target Validation
-                       |
-                       v
-           Subdomain Enumeration
-                       |
-                       v
-                HTTP Probing
-                       |
-                       v
-               Port Discovery
-                       |
-                       v
-             Service Enumeration
-                       |
-                       v
-         Technology Fingerprinting
-                       |
-                       v
-              Website Crawling
-                       |
-                       v
-       JavaScript Endpoint Discovery
-                       |
-                       v
-          Secret & API Key Detection
-                       |
-                       v
-          Vulnerability Scanning
-                       |
-                       v
-             AI Result Analysis
-                       |
-                       v
-            Report Generation
-```
-
-------------------------------------------------------------------------
-
-# Scan Profiles
-
-## Fast
-
--   Host validation
--   Top ports
--   Basic service detection
-
-## Standard
-
--   Fast profile
--   OS detection
--   Default NSE scripts
-
-## Deep
-
--   Standard profile
--   Extended service detection
--   Traceroute
--   Additional NSE scripts
-
-## Full
-
--   Complete TCP scan
--   Advanced fingerprinting
--   Comprehensive analysis
--   Full reporting
-
-## Custom
-
-Run only selected modules.
-
-------------------------------------------------------------------------
-
-# Integrated Tools
-
-  Tool           Purpose
-  -------------- ---------------------------------------
-  Nmap           Service detection, OS detection, NSE
-  Naabu          Fast TCP port discovery
-  Subfinder      Subdomain enumeration
-  HTTPX          HTTP probing
-  WhatWeb        Technology fingerprinting
-  Katana         Web crawling
-  LinkFinder     JavaScript endpoint discovery
-  SecretFinder   Secret detection
-  Nuclei         Template-based vulnerability scanning
-
-------------------------------------------------------------------------
-
-# Internal Execution Flow
-
-``` text
-User
- |
- +--> Select Scan Mode
- |
- +--> Validate Target
- |
- +--> Launch Required Modules
- |      |
- |      +--> Recon
- |      +--> Enumeration
- |      +--> Port Scan
- |      +--> Fingerprinting
- |      +--> Crawling
- |      +--> Vulnerability Scan
- |
- +--> Parse Tool Output
- |
- +--> Correlate Findings
- |
- +--> AI Summary
- |
- +--> Export Reports
-```
-
-------------------------------------------------------------------------
-
-# Installation
-
-``` bash
-git clone https://github.com/<your-username>/TRINITY.git
-cd TRINITY
-pip install -r requirements.txt
-```
-
-Install the required external tools before running TRINITY.
-
-------------------------------------------------------------------------
-
-# Usage
-
-``` bash
-python3 main.py
-```
-
-or
-
-``` bash
-TRINITY
-```
-
-------------------------------------------------------------------------
-
-# Suggested Project Structure
-
-``` text
+```text
 TRINITY/
-│
+
 ├── assets/
 ├── config/
 ├── logs/
@@ -262,72 +56,380 @@ TRINITY/
 │   ├── crawlers/
 │   ├── reporting/
 │   └── utils/
-├── output/
+│
 ├── reports/
+├── output/
 ├── requirements.txt
 ├── README.md
 └── main.py
 ```
 
-------------------------------------------------------------------------
+---
 
-# Reporting
+# 🚀 Installation
 
-Generated reports may include:
+Clone the repository
 
--   Executive summary
--   Open ports
--   Service information
--   Technologies detected
--   JavaScript findings
--   Vulnerability findings
--   AI analysis
--   Recommendations
+```bash
+git clone https://github.com/YOUR_USERNAME/TRINITY.git
 
-Formats:
+cd TRINITY
+```
 
--   HTML
--   Markdown
--   JSON
--   Terminal
+Install Python requirements
 
-------------------------------------------------------------------------
+```bash
+pip install -r requirements.txt
+```
 
-# Future Enhancements
+Install all required reconnaissance tools.
 
--   Plugin marketplace
--   Docker support
--   Parallel execution
--   Burp Suite integration
--   CVSS scoring
--   Asset inventory
--   REST API
--   Automatic updates
--   Interactive dashboard
+---
 
-------------------------------------------------------------------------
+# ▶ Running TRINITY
 
-# License
+## Step 1
 
-MIT License
+Open **Kali Linux Terminal**
 
-------------------------------------------------------------------------
+---
 
-# Author
+## Step 2
+
+Navigate to the project directory.
+
+```bash
+cd /path/to/TRINITY
+```
+
+Example
+
+```bash
+cd ~/Desktop/TRINITY
+```
+
+---
+
+## Step 3
+
+Start TRINITY.
+
+```bash
+python3 main.py
+```
+
+or
+
+```bash
+python main.py
+```
+
+---
+
+## Step 4
+
+The TRINITY banner will appear.
+
+Example
+
+```
+████████╗██████╗ ██╗███╗   ██╗██╗████████╗██╗   ██╗
+╚══██╔══╝██╔══██╗██║████╗  ██║██║╚══██╔══╝╚██╗ ██╔╝
+   ██║   ██████╔╝██║██╔██╗ ██║██║   ██║    ╚████╔╝
+   ██║   ██╔══██╗██║██║╚██╗██║██║   ██║     ╚██╔╝
+   ██║   ██║  ██║██║██║ ╚████║██║   ██║      ██║
+   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝╚═╝   ╚═╝      ╚═╝
+```
+
+---
+
+## Step 5
+
+Enter the target.
+
+Example
+
+```
+example.com
+```
+
+or
+
+```
+192.168.1.100
+```
+
+---
+
+## Step 6
+
+Select a scan profile.
+
+```
+1. Fast Scan
+
+2. Standard Scan
+
+3. Deep Scan
+
+4. Full Scan
+
+5. Custom Scan
+```
+
+---
+
+## Step 7
+
+TRINITY automatically starts the selected modules.
+
+The scan progress will be displayed in real time.
+
+---
+
+## Step 8
+
+After completion TRINITY generates
+
+- Terminal Summary
+- HTML Report
+- JSON Report
+- Markdown Report
+- Logs
+
+Reports are saved inside
+
+```
+reports/
+```
+
+or
+
+```
+output/
+```
+
+---
+
+# 🔄 Complete Execution Flow
+
+```mermaid
+flowchart TD
+
+A[Open Kali Linux Terminal]
+
+--> B[Go to TRINITY Directory]
+
+--> C[Run python3 main.py]
+
+--> D[TRINITY Starts]
+
+--> E[Enter Target]
+
+--> F[Choose Scan Profile]
+
+--> G[Validate Target]
+
+--> H[Launch Selected Modules]
+
+--> I[Collect Results]
+
+--> J[AI Analysis]
+
+--> K[Generate Reports]
+
+--> L[Scan Completed]
+```
+
+---
+
+# 🔍 Reconnaissance Workflow
+
+```mermaid
+flowchart TD
+
+A[Target]
+
+--> B[Subdomain Enumeration]
+
+--> C[HTTP Probing]
+
+--> D[Port Scanning]
+
+--> E[Service Detection]
+
+--> F[Technology Detection]
+
+--> G[Website Crawling]
+
+--> H[JavaScript Analysis]
+
+--> I[Secret Discovery]
+
+--> J[Vulnerability Scanning]
+
+--> K[AI Analysis]
+
+--> L[Report Generation]
+```
+
+---
+
+# ⚙ Internal Architecture
+
+```mermaid
+flowchart LR
+
+User
+
+--> CLI
+
+CLI
+
+--> Scan Engine
+
+Scan Engine
+
+--> Nmap
+
+Scan Engine
+
+--> Naabu
+
+Scan Engine
+
+--> HTTPX
+
+Scan Engine
+
+--> Subfinder
+
+Scan Engine
+
+--> Katana
+
+Scan Engine
+
+--> LinkFinder
+
+Scan Engine
+
+--> SecretFinder
+
+Scan Engine
+
+--> Nuclei
+
+Nmap --> Parser
+Naabu --> Parser
+HTTPX --> Parser
+Subfinder --> Parser
+Katana --> Parser
+LinkFinder --> Parser
+SecretFinder --> Parser
+Nuclei --> Parser
+
+Parser
+
+--> AI Engine
+
+AI Engine
+
+--> Reports
+
+Reports
+
+--> User
+```
+
+---
+
+# 🎯 Scan Profiles
+
+### Fast Scan
+
+- Target Validation
+- Top Port Scan
+- Basic Service Detection
+
+---
+
+### Standard Scan
+
+- Fast Scan
+- Service Detection
+- OS Detection
+- Default NSE Scripts
+
+---
+
+### Deep Scan
+
+- Standard Scan
+- Advanced Enumeration
+- Traceroute
+- Extended Scripts
+
+---
+
+### Full Scan
+
+- All TCP Ports
+- Complete Enumeration
+- Full Service Detection
+- Vulnerability Scanning
+
+---
+
+### Custom Scan
+
+Run only the modules selected by the user.
+
+---
+
+# 📊 Generated Reports
+
+TRINITY generates
+
+- HTML Report
+- Markdown Report
+- JSON Report
+- Scan Logs
+- AI Summary
+
+---
+
+# 🛣 Roadmap
+
+- AI-powered Recon Analysis
+- Parallel Scan Engine
+- Plugin Marketplace
+- Docker Support
+- Burp Suite Integration
+- Interactive Dashboard
+- Automatic Updates
+- CVSS Risk Scoring
+- REST API
+- Asset Inventory
+
+---
+
+# 👨‍💻 Author
 
 **Pranav Sharma**
 
-Cybersecurity • Penetration Testing • Linux • Python
+Cybersecurity Student
 
-------------------------------------------------------------------------
+Penetration Testing • Linux • Python • Recon Automation
 
-# Acknowledgements
+---
 
--   Kali Linux
--   ProjectDiscovery
--   Nmap
--   OWASP
--   WhatWeb
--   LinkFinder
--   SecretFinder
--   Open-source security community
+# 📜 License
+
+MIT License
+
+---
+
+# ⭐ Support
+
+If you found TRINITY useful, consider giving the repository a **Star ⭐** on GitHub.
