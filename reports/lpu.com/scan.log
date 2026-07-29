@@ -1,8 +1,0 @@
-2026-07-28 22:20:40,843 [INFO] [main.py:35]: Initializing Modular Vulnerability Assessment Session...
-2026-07-28 22:20:40,844 [INFO] [main.py:36]: Target Acquired: lpu.com
-2026-07-28 22:20:40,844 [INFO] [main.py:37]: Output Directory Configured: /home/kali/Desktop/secure-site-scan-main/reports/lpu.com
-2026-07-28 22:20:40,844 [INFO] [runner.py:57]: === Starting Assessment Pipeline on Target: lpu.com ===
-2026-07-28 22:20:40,844 [INFO] [runner.py:60]: --> [Phase 1/2] Launching Reconnaissance & Service Enumeration Tools...
-2026-07-28 22:20:40,845 [INFO] [recon.py:61]: Running [Subfinder Subdomain Discovery] on: lpu.com
-2026-07-28 22:21:06,123 [INFO] [recon.py:190]: Running [HTTP Service Prober] on target: lpu.com
-2026-07-28 22:21:10,509 [INFO] [recon.py:248]: Running [Nmap Port & Service Scanner] on: lpu.com

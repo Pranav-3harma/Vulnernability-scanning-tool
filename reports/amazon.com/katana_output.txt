@@ -1,3 +1,0 @@
-https://amazon.com
-https://www.amazon.com/
-https://www.amazon.com/_sec/verify?provider=interstitial
